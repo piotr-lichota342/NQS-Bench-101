@@ -9,6 +9,8 @@ import pandas as pd
 from torch.utils.data import random_split
 
 N_spins = 12
+BATCH_SIZE = 64
+W = 512
 
 
 class CSVDataset(Dataset):
@@ -22,7 +24,7 @@ class CSVDataset(Dataset):
         row = self.data.iloc[idx]
         # Assume the semi last column is the target (amplitude) and the spin configuration is the feature 
         config_numeric_list = [int(x) for x in row["config"]]
-        print(config_numeric_list)
+        #print(config_numeric_list)
         
         features = torch.tensor(config_numeric_list, dtype=torch.float32)
     
@@ -36,7 +38,7 @@ csv_file = '1d_tfim_N12_h0.5_full_dataset.csv'
 dataset = CSVDataset(csv_file)
  
 # Create a DataLoader
-dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 '''
 for features, targets in dataloader:
@@ -48,8 +50,8 @@ train_size = int(0.8 * len(dataset))
 test_size = len(dataset) - train_size
 train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
  
-train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
 device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
 print(f"Using {device} device")
@@ -58,26 +60,32 @@ print(f"Using {device} device")
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super().__init__()
-        self.flatten = nn.Flatten()
-        self.linear_relu_stack = nn.Sequential(
-            nn.Linear(N_spins, 512),
+        #self.flatten = nn.Flatten()
+        self.linear_gelu_stack = nn.Sequential(
+            nn.Linear(N_spins, W),
+            nn.LayerNorm(512),
             nn.GELU(),
-            nn.Linear(512, 512),
+            nn.Linear(W, W),
+            nn.LayerNorm(512),
             nn.GELU(),
-            nn.Linear(512, 1)
+            nn.Linear(W, W),
+            nn.LayerNorm(512),
+            #nn.BatchNorm1d(512),
+            nn.GELU(),
+            nn.Linear(W, 1)
         )
 
     def forward(self, x):
         #print("x is: ",x)
         #x = self.flatten(x)
-        logits = self.linear_relu_stack(x)
+        logits = self.linear_gelu_stack(x)
         return logits
 
 model = NeuralNetwork().to(device)
 print(model)
 
 loss_fn = nn.MSELoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+optimizer = torch.optim.SGD(model.parameters(), lr=1e-3, weight_decay=1e-2, momentum=0.9)
 
 
 def train(dataloader, model, loss_fn, optimizer):
@@ -119,9 +127,12 @@ def test(dataloader, model, loss_fn):
     print(f"Avg loss: {test_loss:>8f} \n")
     
 
-epochs = 20
+epochs = 10
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
     train(train_dataloader, model, loss_fn, optimizer)
     test(test_dataloader, model, loss_fn)
 print("Done!")
+
+torch.save(model.state_dict(), "model.pth")
+print("Saved PyTorch Model State to model.pth")
