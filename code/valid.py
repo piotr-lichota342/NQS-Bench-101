@@ -8,7 +8,7 @@ from torch.utils.data import random_split
 
 from config import device
 
-def test(dataloader, model, loss_fn):
+def valid(dataloader, model, loss_fn):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     model.eval()
@@ -16,12 +16,12 @@ def test(dataloader, model, loss_fn):
     with torch.no_grad():
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
-            y = y.view(-1, 1)
+            #y = y.view(-1, 1)
 
             pred = model(X)
             test_loss += loss_fn(pred, y).item()
             #correct += (pred.argmax(1) == y).type(torch.float).sum().item()
-    test_loss /= num_batches
+    avg_loss = test_loss / num_batches
     #correct /= size
-    #print(f"Avg loss: {test_loss:>8f} \n")
-    return test_loss
+    print(f"Valid loss: {avg_loss:>8f} \n")
+    return avg_loss
