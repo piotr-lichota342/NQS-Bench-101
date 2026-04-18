@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from main import train_losses, valid_losses
+from main import train_losses, valid_losses, loss_fn
 from datetime import datetime
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -11,7 +11,7 @@ plt.plot(train_losses, label="Train Loss")
 plt.plot(valid_losses, label="Validation Loss")
 
 plt.xlabel("Epoch")
-plt.ylabel("Loss (MSE)")
+plt.ylabel(f"Loss ({loss_fn.__class__.__name__})")
 plt.title("Training vs Validation Loss")
 plt.legend()
 plt.grid(True)
