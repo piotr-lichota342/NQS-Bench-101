@@ -19,6 +19,7 @@ def valid(dataloader, model, loss_fn):
             #y = y.view(-1, 1)
 
             pred = model(X)
+            y = y.unsqueeze(1)
             test_loss += loss_fn(pred, y).item()
             #correct += (pred.argmax(1) == y).type(torch.float).sum().item()
     avg_loss = test_loss / num_batches

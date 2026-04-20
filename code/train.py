@@ -16,9 +16,12 @@ def train(dataloader, model, loss_fn, optimizer):
     for batch, (X, y) in enumerate(dataloader):
         X, y = X.to(device), y.to(device)
         #print("shape:  ", X.shape)
+        
 
         # Compute prediction error
         pred = model(X)
+        y = y.unsqueeze(1)
+        #print("The prediction is: ", pred)
         loss = loss_fn(pred, y)
 
         # Backpropagation

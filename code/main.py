@@ -15,6 +15,30 @@ from valid import valid
 from test import test
 from config import EPOCHS, device
 
+'''
+Appropriate loss functions for this task available in Pytorch:
+MSELoss, L1Loss, SmoothL1Loss, HuberLoss
+
+Things to modify:
+- optimizer (and set of hyperparameters)
+- loss function
+- learning rate
+- scheduler
+- train/test/valid proportion
+- batch size
+- weight decay
+- dropout 
+- momentum
+
+Architecture:
+- normalization layers
+- layer width
+- number of layers
+- activation functions
+
+
+'''
+
 
 print(f"Using {device} device")
 
@@ -22,8 +46,11 @@ print(f"Using {device} device")
 
 print(model)
 
-loss_fn = nn.MSELoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=1e-3, weight_decay=1e-2, momentum=0.9)
+
+
+
+loss_fn = nn.HuberLoss()
+optimizer = torch.optim.Rprop(model.parameters(), lr=1e-3)
 
 train_losses = []
 valid_losses = []
@@ -38,6 +65,7 @@ for t in range(EPOCHS):
     valid_losses.append(valid_loss)
     
 print("Done!")
+
 
 print(f"Loss on the test set: {test(test_dataloader, model, loss_fn)}.\n")
 

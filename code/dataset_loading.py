@@ -11,7 +11,7 @@ from config import BATCH_SIZE, TRAIN_PROPORTION, TEST_PROPORTION
 
 # Initialize the dataset
 csv_filenames = [
-    'NQS-Bench-101/1d_tfim_N12_h1.0e-6_full_dataset.csv' 
+    'NQS-Bench-101/1d_tfim_N12_h2.0_full_dataset.csv' 
 ]
 
 csv_filenames2 = [

@@ -3,7 +3,7 @@ from main import train_losses, valid_losses, loss_fn
 from datetime import datetime
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-save_path = f"curves/loss_curve_{timestamp}.png"
+save_path = f"NQS-Bench-101\\curves\\loss_curve_{timestamp}.png"
 
 print(f"Train loss length: {train_losses}")
 
