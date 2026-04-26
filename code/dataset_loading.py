@@ -13,10 +13,10 @@ from config import BATCH_SIZE, TRAIN_PROPORTION, TEST_PROPORTION
 
 
 csv_filenames_dict = {
-    'h=0.5':'NQS-Bench-101/1d_tfim_N12_h0.5_full_dataset.csv',
-    'h=1.0':'NQS-Bench-101/1d_tfim_N12_h1.0_full_dataset.csv',
-    'h=1.0e-6':'NQS-Bench-101/1d_tfim_N12_h1.0e-6_full_dataset.csv',
-    'h=2.0':'NQS-Bench-101/1d_tfim_N12_h2.0_full_dataset.csv'  
+    'h=0.5':'1d_tfim_N12_h0.5_full_dataset.csv',
+    'h=1.0':'1d_tfim_N12_h1.0_full_dataset.csv',
+    'h=1.0e-6':'1d_tfim_N12_h1.0e-6_full_dataset.csv',
+    'h=2.0':'1d_tfim_N12_h2.0_full_dataset.csv'  
 }
 
 

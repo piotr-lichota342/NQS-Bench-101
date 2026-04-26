@@ -32,4 +32,7 @@ class NeuralNetwork(nn.Module):
         logits = self.linear_gelu_stack(x)
         return logits
 
-model = NeuralNetwork().to(device)
+model_h0_5 = NeuralNetwork().to(device)
+model_h1_0 = NeuralNetwork().to(device)
+model_h2_0 = NeuralNetwork().to(device)
+model_h1_0e6 = NeuralNetwork().to(device)
