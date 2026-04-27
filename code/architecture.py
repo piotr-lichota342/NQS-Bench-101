@@ -5,26 +5,31 @@ from torchvision import datasets
 from torchvision.transforms import ToTensor
 import pandas as pd
 from torch.utils.data import random_split
+from torch.nn import Parameter
+from torchinfo import summary
 
-from config import N_spins, W, device
+from config import N_spins, W, device, HIDDEN_LAYERS, INPUT_SIZE
 
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super().__init__()
         #self.flatten = nn.Flatten()
+        layers = []
+        layers.append(nn.Linear(N_spins, W))
+        layers.append(nn.LayerNorm(W))
+        layers.append(nn.GELU())
+        
+        for hl in range(HIDDEN_LAYERS):
+            layers.append(nn.Linear(W, W))
+            layers.append(nn.LayerNorm(W))
+            layers.append(nn.GELU())
+            
+        layers.append(nn.Linear(W, 1))
+        
         self.linear_gelu_stack = nn.Sequential(
-            nn.Linear(N_spins, W),
-            nn.LayerNorm(W),
-            nn.GELU(),
-            nn.Linear(W, W),
-            nn.LayerNorm(W),
-            nn.GELU(),
-            nn.Linear(W, W),
-            nn.LayerNorm(W),
-            #nn.BatchNorm1d(512),
-            nn.GELU(),
-            nn.Linear(W, 1)
+            *layers
         )
+        
 
     def forward(self, x):
         #print("x is: ",x)
@@ -36,3 +41,8 @@ model_h0_5 = NeuralNetwork().to(device)
 model_h1_0 = NeuralNetwork().to(device)
 model_h2_0 = NeuralNetwork().to(device)
 model_h1_0e6 = NeuralNetwork().to(device)
+
+
+print(summary(model_h0_5, INPUT_SIZE))
+#print(model_h0_5.input_shape())
+#print(model_h0_5.Torch)
