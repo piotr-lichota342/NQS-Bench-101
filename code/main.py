@@ -8,9 +8,11 @@ from torchvision.transforms import ToTensor
 import pandas as pd
 from torch.utils.data import random_split
 import time
-from sklearn.metrics import r2_score
+from sklearn.metrics import r2_score, mean_squared_error, root_mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, root_mean_squared_log_error, mean_squared_log_error, 
 import numpy as np
 from keras import backend as K
+import sklearn
+import astropy
 
 from dataset_loading import train_dataloader_h0_5, train_dataloader_h1_0, train_dataloader_h2_0, train_dataloader_h1_0e6
 from dataset_loading import test_dataloader_h0_5, test_dataloader_h1_0, test_dataloader_h2_0, test_dataloader_h1_0e6
@@ -24,6 +26,9 @@ from valid import valid
 from test import test
 from config import EPOCHS, device, trained_regimes
 #from distancia import Hellinger
+
+def smape(a, f):
+    return 1/len(a) * np.sum(2 * np.abs(f-a) / (np.abs(a) + np.abs(f))*100)
 
 def hellinger_distance(p,q):
     #Turning into probabilities
@@ -144,6 +149,16 @@ if trained_regimes["h=0.5"]:
     y_true_h0_5 = [x.item() for x in y_true_h0_5]
     #print("types y_pred, y_true: ",(y_pred), (y_true))
     print(f"R square (h=0.5): {round(r2_score(y_pred_h0_5, y_true_h0_5),3)}")
+    print(f"Variance (h=0.5): {np.var(y_pred_h0_5)}")
+    print(f"Root mean squared error (h=0.5): {sklearn.metrics.root_mean_squared_error(y_true_h0_5, y_pred_h0_5)}")
+    print(f"Mean squared error (h=0.5): {mean_squared_error(y_true_h0_5, y_pred_h0_5)}")
+    print(f"Root mean squared error (h=0.5): {root_mean_squared_error(y_true_h0_5, y_pred_h0_5)}")
+    print(f"Mean absolute error: {mean_absolute_error(y_true_h0_5, y_pred_h0_5)}")
+    print(f"Mean absolute percentage error: {mean_absolute_percentage_error(y_true_h0_5, y_pred_h0_5)}")
+    print(f"Symmetric mean absolute percentage error (h=0.5): {smape(y_true_h0_5, y_pred_h0_5)}")
+    print(f"Root mean squared error (h=0.5): {root_mean_squared_error(y_true_h0_5, y_pred_h0_5)}")
+    print(f"Root mean squared log error (h=0.5): {root_mean_squared_log_error(y_true_h0_5, y_pred_h0_5)}")
+
     # Create an instance of the Hellinger class
     #hellinger_dist = Hellinger()
 
