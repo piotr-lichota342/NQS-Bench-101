@@ -43,6 +43,7 @@ model_h2_0 = NeuralNetwork().to(device)
 model_h1_0e6 = NeuralNetwork().to(device)
 
 
-print(summary(model_h0_5, INPUT_SIZE))
+summary_str = str(summary(model_h0_5, INPUT_SIZE))
+print(summary_str)
 #print(model_h0_5.input_shape())
 #print(model_h0_5.Torch)

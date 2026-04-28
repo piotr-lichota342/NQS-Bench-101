@@ -3,7 +3,7 @@ import torch
 N_spins = 12
 BATCH_SIZE = 32
 W = 512
-EPOCHS = 5
+EPOCHS = 1
 HIDDEN_LAYERS = 2
 INPUT_SIZE = (32,12)
 
@@ -19,3 +19,5 @@ trained_regimes = {
 }
 
 device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
+print(device)
+

@@ -1,0 +1,1 @@
+model_summary,input_size,batch_size,network_width,hidden_layers,train_proportion,test_proportion,valid_proportion,device,trained_h0.5,trained_h1.0,trained_h2.0,trained_h1.0e-6,optimizer,loss_fn,activation_f,learning_rate,bias,avr_res,MBE,R2,RSS,TSS,adjusted_R2,MSE,RMSE,MAE,MAPE,wMAPE,sMAPE,MSLE,RMSLE,AIC,BIC,ESS,hellinger_dist

@@ -113,6 +113,10 @@ optimizer_h1_0 = torch.optim.Adam(model_h1_0.parameters(), lr=1e-3) if trained_r
 optimizer_h2_0 = torch.optim.Adam(model_h2_0.parameters(), lr=1e-3) if trained_regimes["h=2.0"] else None
 optimizer_h1_0e6 = torch.optim.Adam(model_h1_0e6.parameters(), lr=1e-3) if trained_regimes["h=1.0e-6"] else None
 
+#print(optimizer_h0_5.get_config())
+
+
+
 train_losses_h0_5, valid_losses_h0_5 = [], []
 train_losses_h1_0, valid_losses_h1_0 = [], []
 train_losses_h2_0, valid_losses_h2_0 = [], []
@@ -172,17 +176,29 @@ if trained_regimes["h=0.5"]:
     y_pred_h0_5 = [x.item() for x in y_pred_h0_5]
     y_true_h0_5 = [x.item() for x in y_true_h0_5]
     #print("types y_pred, y_true: ",(y_pred), (y_true))
-    print(f"R square (h=0.5): {round(r2_score(y_pred_h0_5, y_true_h0_5),4)}")
-    print(f"Variance (h=0.5): {round(np.var(y_pred_h0_5),4)}")
-    print(f"Root mean squared error (h=0.5): {round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),4)}")
-    print(f"Mean squared error (h=0.5): {round(mean_squared_error(y_true_h0_5, y_pred_h0_5),4)}")
-    print(f"Root mean squared error (h=0.5): {round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),3)}")
-    print(f"Mean absolute error: {round(mean_absolute_error(y_true_h0_5, y_pred_h0_5),4)}")
-    print(f"Mean absolute percentage error: {round(mean_absolute_percentage_error(y_true_h0_5, y_pred_h0_5),4)}")
-    print(f"Symmetric mean absolute percentage error (h=0.5): {round(smape(y_true_h0_5, y_pred_h0_5),4)}")
-    print(f"Root mean squared error (h=0.5): {round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),4)}")
-    print(f"Root mean squared log error (h=0.5): {round(root_mean_squared_log_error(y_true_h0_5, y_pred_h0_5),4)}")
-    print(f"Mean squared log error (h=0.5): {round(mean_squared_log_error(y_true_h0_5, y_pred_h0_5),4)}")
+    
+    r2 = round(r2_score(y_pred_h0_5, y_true_h0_5),4)
+    var = round(np.var(y_pred_h0_5),4)
+    rmse = round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),4)
+    mse = round(mean_squared_error(y_true_h0_5, y_pred_h0_5),4)
+    mae = round(mean_absolute_error(y_true_h0_5, y_pred_h0_5),4)
+    mape = round(mean_absolute_percentage_error(y_true_h0_5, y_pred_h0_5),4)
+    smape = round(smape(y_true_h0_5, y_pred_h0_5),4)
+    rmse = round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),4)
+    rmsle = round(root_mean_squared_log_error(y_true_h0_5, y_pred_h0_5),4)
+    msle = round(mean_squared_log_error(y_true_h0_5, y_pred_h0_5),4)
+    hell_dist = hellinger_distance(y_pred_h0_5, y_true_h0_5)
+    
+    print(f"R square (h=0.5): {r2}")
+    print(f"Variance (h=0.5): {var}")
+    print(f"Root mean squared error (h=0.5): {rmse}")
+    print(f"Mean squared error (h=0.5): {mse}")
+    print(f"Mean absolute error: {mae}")
+    print(f"Mean absolute percentage error: {mape}")
+    print(f"Symmetric mean absolute percentage error (h=0.5): {smape}")
+    print(f"Root mean squared error (h=0.5): {rmse}")
+    print(f"Root mean squared log error (h=0.5): {rmsle}")
+    print(f"Mean squared log error (h=0.5): {msle}")
 
     # Create an instance of the Hellinger class
     #hellinger_dist = Hellinger()
