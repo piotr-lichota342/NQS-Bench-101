@@ -8,7 +8,7 @@ from torchvision.transforms import ToTensor
 import pandas as pd
 from torch.utils.data import random_split
 import time
-from sklearn.metrics import r2_score, mean_squared_error, root_mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, root_mean_squared_log_error, mean_squared_log_error, 
+from sklearn.metrics import r2_score, mean_squared_error, root_mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, root_mean_squared_log_error, mean_squared_log_error
 import numpy as np
 from keras import backend as K
 import sklearn
@@ -27,15 +27,39 @@ from test import test
 from config import EPOCHS, device, trained_regimes
 #from distancia import Hellinger
 
+"""
+Evaluation metrics (https://developer.nvidia.com/blog/a-comprehensive-overview-of-regression-evaluation-metrics/):
+- sum of residuals (bias)
+- the average residual
+- mean bias error (MBE)
+- R-squared (coefficient of determination)
+- The residual sum of squares (RSS)
+- Total sum of squares (TSS)
+- adjusted R² (penalizes adding features that are not useful for predicting the target)
+- Mean squared error (MSE)
+- Root mean squared error (RMSE)
+- Mean absolute error (MAE)
+- Mean absolute percentage error (MAPE)
+- Weighted mean absolute percentage error (wMAPE)
+- Symmetric mean absolute percentage error (sMAPE)
+- Mean squared log error (MSLE)
+- Root mean squared log error (RMSLE)
+- Akaike information criterion (AIC)
+- Bayesian optimization criterion (BIC)
+- Explained sum of squares (ESS)
+
+"""
+
 def smape(a, f):
-    return 1/len(a) * np.sum(2 * np.abs(f-a) / (np.abs(a) + np.abs(f))*100)
+    a_np, f_np = np.array(a), np.array(f)
+    return 1/len(a) * np.sum(2 * np.abs(f_np-a_np) / (np.abs(a_np) + np.abs(f_np))*100)
 
 def hellinger_distance(p,q):
     #Turning into probabilities
     p_prob, q_prob = [np.abs(a) for a in p], [np.abs(a) for a in q]
     p_prob, q_prob = [a/np.sum(p) for a in p_prob], [a/np.sum(q) for a in q_prob]
     #print(f"p_prob, q prob: {p_prob}, {q_prob}")
-    final_result = 0
+    final_result = 0   
     for i in range(len(p_prob)):
         diff = (p_prob[i])**(0.5) - (q_prob[i])**(0.5)
         final_result += diff**2
@@ -148,16 +172,17 @@ if trained_regimes["h=0.5"]:
     y_pred_h0_5 = [x.item() for x in y_pred_h0_5]
     y_true_h0_5 = [x.item() for x in y_true_h0_5]
     #print("types y_pred, y_true: ",(y_pred), (y_true))
-    print(f"R square (h=0.5): {round(r2_score(y_pred_h0_5, y_true_h0_5),3)}")
-    print(f"Variance (h=0.5): {np.var(y_pred_h0_5)}")
-    print(f"Root mean squared error (h=0.5): {sklearn.metrics.root_mean_squared_error(y_true_h0_5, y_pred_h0_5)}")
-    print(f"Mean squared error (h=0.5): {mean_squared_error(y_true_h0_5, y_pred_h0_5)}")
-    print(f"Root mean squared error (h=0.5): {root_mean_squared_error(y_true_h0_5, y_pred_h0_5)}")
-    print(f"Mean absolute error: {mean_absolute_error(y_true_h0_5, y_pred_h0_5)}")
-    print(f"Mean absolute percentage error: {mean_absolute_percentage_error(y_true_h0_5, y_pred_h0_5)}")
-    print(f"Symmetric mean absolute percentage error (h=0.5): {smape(y_true_h0_5, y_pred_h0_5)}")
-    print(f"Root mean squared error (h=0.5): {root_mean_squared_error(y_true_h0_5, y_pred_h0_5)}")
-    print(f"Root mean squared log error (h=0.5): {root_mean_squared_log_error(y_true_h0_5, y_pred_h0_5)}")
+    print(f"R square (h=0.5): {round(r2_score(y_pred_h0_5, y_true_h0_5),4)}")
+    print(f"Variance (h=0.5): {round(np.var(y_pred_h0_5),4)}")
+    print(f"Root mean squared error (h=0.5): {round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),4)}")
+    print(f"Mean squared error (h=0.5): {round(mean_squared_error(y_true_h0_5, y_pred_h0_5),4)}")
+    print(f"Root mean squared error (h=0.5): {round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),3)}")
+    print(f"Mean absolute error: {round(mean_absolute_error(y_true_h0_5, y_pred_h0_5),4)}")
+    print(f"Mean absolute percentage error: {round(mean_absolute_percentage_error(y_true_h0_5, y_pred_h0_5),4)}")
+    print(f"Symmetric mean absolute percentage error (h=0.5): {round(smape(y_true_h0_5, y_pred_h0_5),4)}")
+    print(f"Root mean squared error (h=0.5): {round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),4)}")
+    print(f"Root mean squared log error (h=0.5): {round(root_mean_squared_log_error(y_true_h0_5, y_pred_h0_5),4)}")
+    print(f"Mean squared log error (h=0.5): {round(mean_squared_log_error(y_true_h0_5, y_pred_h0_5),4)}")
 
     # Create an instance of the Hellinger class
     #hellinger_dist = Hellinger()
