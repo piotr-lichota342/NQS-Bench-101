@@ -33,6 +33,6 @@ def train(dataloader, model, loss_fn, optimizer):
 
         if batch % 100 == 0:
             loss, current = loss.item(), (batch + 1) * len(X)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+            print(f"Training loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
             
     return total_loss / len(dataloader)

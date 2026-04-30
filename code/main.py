@@ -50,23 +50,7 @@ Evaluation metrics (https://developer.nvidia.com/blog/a-comprehensive-overview-o
 
 """
 
-def smape(a, f):
-    a_np, f_np = np.array(a), np.array(f)
-    return 1/len(a) * np.sum(2 * np.abs(f_np-a_np) / (np.abs(a_np) + np.abs(f_np))*100)
 
-def hellinger_distance(p,q):
-    #Turning into probabilities
-    p_prob, q_prob = [np.abs(a) for a in p], [np.abs(a) for a in q]
-    p_prob, q_prob = [a/np.sum(p) for a in p_prob], [a/np.sum(q) for a in q_prob]
-    #print(f"p_prob, q prob: {p_prob}, {q_prob}")
-    final_result = 0   
-    for i in range(len(p_prob)):
-        diff = (p_prob[i])**(0.5) - (q_prob[i])**(0.5)
-        final_result += diff**2
-    final_result = (final_result**(0.5)) * (1/(2**(0.5)))
-    final_result = round(final_result,3)
-    
-    return final_result
     
 
 
@@ -125,7 +109,7 @@ train_losses_h1_0e6, valid_losses_h1_0e6 = [], []
 start_training_time = time.time()
 
 for t in range(EPOCHS):
-    print(f"Epoch {t+1}\n-------------------------------")
+    print(f"Epoch {t+1}/{EPOCHS}\n-------------------------------")
     
     if trained_regimes["h=0.5"]:
         train_loss_h0_5, valid_loss_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5), valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
@@ -159,8 +143,8 @@ y_pred_h2_0, y_true_h2_0 = [], []
 
 if trained_regimes["h=0.5"]:
     print(f"Loss on the test set (h=0.5): {test(test_dataloader_h0_5, model_h0_5, loss_fn)}.\n")
-    torch.save(model_h0_5.state_dict(), "saved_models\\model_h0_5.pth")
-    print("Saved PyTorch Model State to saved_models\\model_h0_5.pth")
+    #torch.save(model_h0_5.state_dict(), "saved_models\\model_h0_5.pth")
+    #print("Saved PyTorch Model State to saved_models\\model_h0_5.pth")
     size = len(dataloader_h0_5.dataset)
     num_batches = len(dataloader_h0_5)
     
