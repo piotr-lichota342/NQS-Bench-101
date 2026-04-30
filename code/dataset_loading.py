@@ -5,6 +5,7 @@ from torchvision import datasets
 from torchvision.transforms import ToTensor
 import pandas as pd
 from torch.utils.data import random_split
+import numpy as np
 
 from config import BATCH_SIZE, TRAIN_PROPORTION, TEST_PROPORTION
 
@@ -36,7 +37,7 @@ class CSVDataset(Dataset):
         
         features = torch.tensor(config_numeric_list, dtype=torch.float32)
     
-        target = torch.tensor(row["amplitude"], dtype=torch.float32)
+        target = torch.tensor(np.log2(row["amplitude"]), dtype=torch.float32)
         
         return features, target
     
