@@ -128,13 +128,13 @@ for t in range(EPOCHS):
         train_losses_h2_0.append(train_loss_h2_0)
         valid_losses_h2_0.append(valid_loss_h2_0)
     if trained_regimes["h=1.0e-6"]:
-        print("Losses for h=1.0e-6:\n")
+        print(r"Losses for $h=10^{-6}$\n")
         train_loss_h1_0e6, valid_loss_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6), valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
         train_losses_h1_0e6.append(train_loss_h1_0e6)
         valid_losses_h1_0e6.append(valid_loss_h1_0e6)    
  
 end_training_time = time.time() 
-total_training_time = end_training_time - start_training_time
+total_training_time = round(end_training_time - start_training_time, 2)
 
    
 print("Done!")
@@ -146,7 +146,11 @@ y_pred_h2_0, y_true_h2_0 = [], []
    
 
 if trained_regimes["h=0.5"]:
-    print(f"Loss on the test set (h=0.5): {test(test_dataloader_h0_5, model_h0_5, loss_fn)}.\n")
+    avg_test_loss_h0_5 = test(test_dataloader_h0_5, model_h0_5, loss_fn)
+    avg_train_loss_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5)
+    avg_valid_loss_h0_5 = valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
+    
+    print(f"Loss on the test set (h=0.5): {avg_test_loss_h0_5}.\n")
     #torch.save(model_h0_5.state_dict(), "saved_models\\model_h0_5.pth")
     #print("Saved PyTorch Model State to saved_models\\model_h0_5.pth")
     size = len(dataloader_h0_5.dataset)
@@ -177,7 +181,10 @@ if trained_regimes["h=0.5"]:
     # Print the result
     #print(f"The Hellinger distance between the two distributions is (h=0.5): {hellinger_distance(y_pred_h0_5, y_true_h0_5)}")
 if trained_regimes["h=1.0"]:
-    print(f"Loss on the test set (h=1.0): {test(test_dataloader_h1_0, model_h1_0, loss_fn)}.\n")
+    avg_test_loss_h1_0 = test(test_dataloader_h1_0, model_h1_0, loss_fn)
+    avg_train_loss_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0)
+    avg_valid_loss_h1_0 = valid(valid_dataloader_h1_0, model_h1_0, loss_fn)
+    print(f"Loss on the test set (h=1.0): {avg_test_loss_h1_0}.\n")
     torch.save(model_h1_0.state_dict(), "saved_models\\model_h1_0.pth")
     print("Saved PyTorch Model State to saved_models\\model_h1_0.pth")
     size = len(dataloader_h1_0.dataset)
@@ -197,7 +204,10 @@ if trained_regimes["h=1.0"]:
     #print("types y_pred, y_true: ",(y_pred), (y_true))
     print(f"R square (h=1.0): {round(r2_score(y_pred_h1_0, y_true_h1_0),3)}")
 if trained_regimes["h=2.0"]:
-    print(f"Loss on the test set (h=2.0): {test(test_dataloader_h2_0, model_h2_0, loss_fn)}.\n")
+    avg_test_loss_h2_0 = test(test_dataloader_h2_0, model_h2_0, loss_fn)
+    avg_train_loss_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0)
+    avg_valid_loss_h2_0 = valid(valid_dataloader_h2_0, model_h2_0, loss_fn)
+    print(f"Loss on the test set (h=2.0): {avg_test_loss_h2_0}.\n")
     torch.save(model_h2_0.state_dict(), "saved_models\\model_h2_0.pth")
     size = len(dataloader_h2_0.dataset)
     num_batches = len(dataloader_h2_0)
@@ -217,7 +227,10 @@ if trained_regimes["h=2.0"]:
     print(f"R square (h=2.0): {round(r2_score(y_pred_h2_0, y_true_h2_0),3)}")
     print("Saved PyTorch Model State to saved_models\\model_h2_0.pth")
 if trained_regimes["h=1.0e-6"]:
-    print(f"Loss on the test set (h=1.0e-6): {test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)}.\n")
+    avg_test_loss_h1_0e6 = test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)
+    avg_train_loss_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
+    avg_valid_loss_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
+    print(f"Loss on the test set (h=1.0e-6): {avg_test_loss_h1_0e6}.\n")
     torch.save(model_h1_0e6.state_dict(), "saved_models\\model_h1_0e6.pth")
     print("Saved PyTorch Model State to saved_models\\ model_h1_0e6.pth")
     size = len(dataloader_h1_0e6.dataset)

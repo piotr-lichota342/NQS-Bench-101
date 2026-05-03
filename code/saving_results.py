@@ -2,6 +2,9 @@ import matplotlib.pyplot as plt
 
 from main import train_losses_h1_0e6, train_losses_h0_5, train_losses_h1_0, train_losses_h2_0
 from main import model_h0_5, model_h1_0, model_h2_0, model_h1_0e6
+from main import test_loss_h1_0e6, test_loss_h0_5, test_loss_h1_0, test_loss_h2_0
+from main import train_loss_h1_0e6, train_loss_h0_5, train_loss_h1_0, train_loss_h2_0
+from main import valid_loss_h1_0e6, valid_loss_h0_5, valid_loss_h1_0, valid_loss_h2_0
 from main import valid_losses_h1_0e6, valid_losses_h0_5, valid_losses_h1_0, valid_losses_h2_0
 from main import loss_fn, y_true_h1_0e6, y_pred_h1_0e6, y_true_h0_5, y_pred_h0_5, y_true_h1_0, y_pred_h1_0, y_true_h2_0, y_pred_h2_0, optimizer_h0_5, optimizer_h1_0, optimizer_h1_0e6, optimizer_h2_0, total_training_time
 from config import trained_regimes, EPOCHS, BATCH_SIZE, W, TEST_PROPORTION, TRAIN_PROPORTION, VALID_PROPORTION, HIDDEN_LAYERS, INPUT_SIZE, device, trained_regimes, DECIMAL_PLACES_METRICS
@@ -15,6 +18,7 @@ from sklearn.metrics import r2_score, mean_squared_error, root_mean_squared_erro
 import pandas as pd
 
 from datetime import datetime
+
 
 """
 Each training log consists of (for each trained regime):
@@ -34,6 +38,8 @@ Each training log consists of (for each trained regime):
 - number of trainable parameters
 
 """
+
+
 
 def smape(a, f):
     a_np, f_np = np.array(a), np.array(f)
@@ -102,6 +108,9 @@ print(f"Mean squared log error (h=0.5): {msle}")
 metrics_data = {
     'regime': None,
     'model_summary': None, # summary_str
+    'test_loss':None,
+    'train_loss':None,
+    'valid_loss':None,
     'training_time (s)': total_training_time,
     'epochs': EPOCHS,
     'input_size': INPUT_SIZE,
@@ -145,31 +154,33 @@ f1 = plt.figure()
 f2 = plt.figure()
 ax1 = f1.add_subplot(111)
 ax2 = f2.add_subplot(111)
-ax1.set_xlabel("True Amplitudes (log2 scale)")
-ax1.set_ylabel("Predicted Amplitudes (log2 scale)")
-ax1.set_title("(NQS-Bench-101): True vs Predicted Amplitudes")
-#ax1.set_yscale('log', base=2)
+ax1.set_xlabel(r"True $\log\psi_\omega(\vec{\sigma})$")
+ax1.set_ylabel(r"Predicted $\log\psi_\omega(\vec{\sigma})$")
+ax1.set_title(r"(NQS-Bench-101): True vs. Predicted $\log\psi_\omega(\vec{\sigma})$")
+
 
 ax1.grid(True)
 ax2.set_xlabel("Epoch")
-ax2.set_ylabel(f"Loss ({loss_fn.__class__.__name__})")
+ax2.set_ylabel(f"{loss_fn.__class__.__name__} (log scale)")
 ax2.set_title("(NQS-Bench-101): Training vs Validation Loss")
 
 ax2.grid(True)
+ax2.set_yscale("log")
+
 graph = go.Figure()
 graph2 = go.Figure()
 
 graph.update_layout(
-        xaxis_title="True Amplitude (log2 scale)",
-        yaxis_title="Predicted Amplitude (log2 scale)",
-        title='(NQS-Bench-101): True vs Predicted Amplitude',
+        xaxis_title=r"True $\log\psi_\omega(\vec{\sigma})$",
+        yaxis_title=r"Predicted $\log\psi_\omega(\vec{\sigma})$",
+        title=r"(NQS-Bench-101): True vs. Predicted $\log\psi_\omega(\vec{\sigma})$",
         showlegend=True,
         legend_title_text="Legend"
     )
 
 graph2.update_layout(
         xaxis_title="Epochs",
-        yaxis_title=f"{loss_fn.__class__.__name__}",
+        yaxis_title=f"{loss_fn.__class__.__name__} (log scale)",
         title='(NQS-Bench-101): Train vs Valid Loss',
         showlegend=True,
         legend_title_text="Legend"
@@ -186,7 +197,10 @@ if trained_regimes["h=1.0e-6"]:
     
     #ax1 = f1.add_axes(train_losses_h1_0e6)
     df_metrics_h1_0e6 = metrics_data.copy()
-    df_metrics_h1_0e6['regime'] = "h=1.0e-6"
+    df_metrics_h1_0e6['regime'] = r"$h=10^{-6}$"
+    df_metrics_h1_0e6['test_loss'] = test_loss_h1_0e6
+    df_metrics_h1_0e6['train_loss'] = train_loss_h1_0e6
+    df_metrics_h1_0e6['valid_loss'] = valid_loss_h1_0e6
     df_metrics_h1_0e6['model_summary'] = str(summary(model_h1_0e6, INPUT_SIZE))
     df_metrics_h1_0e6['optimizer_name'] = optimizer_h1_0e6.__class__.__name__
     df_metrics_h1_0e6['optimizer_params'] = str(dict_optimizer_h1_0e6)
@@ -202,17 +216,17 @@ if trained_regimes["h=1.0e-6"]:
     
     #metrics_h1_0e6 = metrics_data
     
-    ax2.plot(train_losses_h1_0e6, label="Train loss (h=1.0e-6)")
-    ax2.plot(valid_losses_h1_0e6, label="Valid loss (h=1.0e-6)")
-    ax1.plot(y_true_h1_0e6, y_pred_h1_0e6, 's', markersize=1, label="h=1.0e-6")
+    ax2.plot(train_losses_h1_0e6, label=r"Train loss ($h = 10^{-6}$)")
+    ax2.plot(valid_losses_h1_0e6, label=r"Valid loss ($h = 10^{-6}$)")
+    ax1.plot(y_true_h1_0e6, y_pred_h1_0e6, 's', markersize=1, label=r"$h = 10^{-6}$")
     
     
     
-    graph.add_trace(go.Scatter(x=y_true_h1_0e6, y=y_pred_h1_0e6, mode='markers', name="h=1.0e-6"))
+    graph.add_trace(go.Scatter(x=y_true_h1_0e6, y=y_pred_h1_0e6, mode='markers', name=r"$h = 10^{-6}$"))
     
 
-    graph2.add_trace(go.Scatter(x=[e for e in range(1,EPOCHS+1,1)], y=valid_losses_h1_0e6, mode='lines', name="Valid loss (h=1.0e-6)"))
-    graph2.add_trace(go.Scatter(x=[e for e in range(1,EPOCHS+1,1)], y=train_losses_h1_0e6, mode='lines', name="Train loss (h=1.0e-6)"))
+    graph2.add_trace(go.Scatter(x=[e for e in range(1,EPOCHS+1,1)], y=valid_losses_h1_0e6, mode='lines', name=r"Valid loss ($h = 10^{-6}$)"))
+    graph2.add_trace(go.Scatter(x=[e for e in range(1,EPOCHS+1,1)], y=train_losses_h1_0e6, mode='lines', name=r"Train loss ($h = 10^{-6}$)"))
     
     #graph2.show()
     #graph2.write_html(save_path_loss_curve_html)
@@ -230,6 +244,9 @@ if trained_regimes["h=0.5"]:
     #ax1 = f1.add_axes(train_losses_h0_5)
     df_metrics_h0_5 = metrics_data.copy()
     df_metrics_h0_5['regime'] = "h=0.5"
+    df_metrics_h0_5['test_loss'] = test_loss_h0_5
+    df_metrics_h0_5['train_loss'] = train_loss_h0_5
+    df_metrics_h0_5['valid_loss'] = valid_loss_h0_5
     df_metrics_h0_5['model_summary'] = str(summary(model_h0_5, INPUT_SIZE))
     df_metrics_h0_5['optimizer_name'] = optimizer_h0_5.__class__.__name__
     df_metrics_h0_5['optimizer_params'] = str(dict_optimizer_h0_5)
@@ -290,6 +307,9 @@ if trained_regimes["h=1.0"]:
     #ax1 = f1.add_axes(train_losses_h1_0)
     df_metrics_h1_0 = metrics_data.copy()
     df_metrics_h1_0['regime'] = "h=1.0"
+    df_metrics_h1_0['test_loss'] = test_loss_h1_0
+    df_metrics_h1_0['train_loss'] = train_loss_h1_0
+    df_metrics_h1_0['valid_loss'] = valid_loss_h1_0
     df_metrics_h1_0['model_summary'] = str(summary(model_h1_0, INPUT_SIZE))
     df_metrics_h1_0['optimizer_name'] = optimizer_h1_0.__class__.__name__
     df_metrics_h1_0['optimizer_params'] = str(dict_optimizer_h1_0)
@@ -334,6 +354,9 @@ if trained_regimes["h=2.0"]:
     #ax1 = f1.add_axes(train_losses_h2_0)
     df_metrics_h2_0 = metrics_data.copy()
     df_metrics_h2_0['regime'] = "h=2.0"
+    df_metrics_h2_0['test_loss'] = round(test_loss_h2_0,DECIMAL_PLACES_METRICS)
+    df_metrics_h2_0['train_loss'] = round(train_loss_h2_0,DECIMAL_PLACES_METRICS)
+    df_metrics_h2_0['valid_loss'] = round(valid_loss_h2_0,DECIMAL_PLACES_METRICS)
     df_metrics_h2_0['model_summary'] = str(summary(model_h2_0, INPUT_SIZE))
     df_metrics_h2_0['optimizer_name'] = optimizer_h2_0.__class__.__name__
     df_metrics_h2_0['optimizer_params'] = str(dict_optimizer_h2_0)
@@ -381,8 +404,8 @@ min_val = min(all_values, default=math.inf)
 max_val = max(all_values, default=-math.inf)
 
 perfect_prediction_x = [min_val, max_val]
-ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y = x (perfect prediction)", linewidth=0.7, color='cyan', alpha=0.5)
-graph.add_trace(go.Scatter(x=[min_val, max_val], y=[min_val, max_val], mode='lines', name="y = x (perfect prediction)", opacity=0.5, marker=dict(color='cyan')))
+ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y=x (perfect prediction)", linewidth=0.7, color='cyan', alpha=0.5)
+graph.add_trace(go.Scatter(x=[min_val, max_val], y=[min_val, max_val], mode='lines', name="y=x (perfect prediction)", opacity=0.5, marker=dict(color='cyan')))
     
 ax1.legend(title="Legend")
 ax2.legend(title="Legend")

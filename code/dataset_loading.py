@@ -37,7 +37,7 @@ class CSVDataset(Dataset):
         
         features = torch.tensor(config_numeric_list, dtype=torch.float32)
     
-        target = torch.tensor(np.log2(row["amplitude"]), dtype=torch.float32)
+        target = torch.tensor(np.log(row["amplitude"]), dtype=torch.float32)
         
         return features, target
     
