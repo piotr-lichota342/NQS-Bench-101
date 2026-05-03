@@ -2,13 +2,17 @@ import matplotlib.pyplot as plt
 
 from main import train_losses_h1_0e6, train_losses_h0_5, train_losses_h1_0, train_losses_h2_0
 from main import model_h0_5, model_h1_0, model_h2_0, model_h1_0e6
-from main import test_loss_h1_0e6, test_loss_h0_5, test_loss_h1_0, test_loss_h2_0
-from main import train_loss_h1_0e6, train_loss_h0_5, train_loss_h1_0, train_loss_h2_0
-from main import valid_loss_h1_0e6, valid_loss_h0_5, valid_loss_h1_0, valid_loss_h2_0
+from dataset_loading import train_dataloader_h0_5, train_dataloader_h1_0, train_dataloader_h2_0, train_dataloader_h1_0e6
+from dataset_loading import test_dataloader_h0_5, test_dataloader_h1_0, test_dataloader_h2_0, test_dataloader_h1_0e6
+from dataset_loading import valid_dataloader_h0_5, valid_dataloader_h1_0, valid_dataloader_h2_0, valid_dataloader_h1_0e6
+
 from main import valid_losses_h1_0e6, valid_losses_h0_5, valid_losses_h1_0, valid_losses_h2_0
 from main import loss_fn, y_true_h1_0e6, y_pred_h1_0e6, y_true_h0_5, y_pred_h0_5, y_true_h1_0, y_pred_h1_0, y_true_h2_0, y_pred_h2_0, optimizer_h0_5, optimizer_h1_0, optimizer_h1_0e6, optimizer_h2_0, total_training_time
 from config import trained_regimes, EPOCHS, BATCH_SIZE, W, TEST_PROPORTION, TRAIN_PROPORTION, VALID_PROPORTION, HIDDEN_LAYERS, INPUT_SIZE, device, trained_regimes, DECIMAL_PLACES_METRICS
 from torchinfo import summary
+from test import test
+from valid import valid
+from train import train
 import plotly.graph_objects as go
 import torch
 import math
@@ -127,13 +131,19 @@ metrics_data = {
     'bias': None,
     'avr_res': None,
     'MBE': None,
-    'R2': None,
+    'R2_test': None,
+    'R2_train': None,
+    'R2_valid': None,
     'RSS': None,
     'TSS': None,
     'adjusted_R2': None,
-    'MSE': None,
+    'MSE_test': None,
+    'MSE_train': None,
+    'MSE_valid': None,
     'RMSE': None,
-    'MAE': None,
+    'MAE_test': None,
+    'MAE_train': None,
+    'MAE_valid': None,
     'MAPE': None,
     'wMAPE': None,
     'sMAPE': None,
@@ -157,6 +167,7 @@ ax2 = f2.add_subplot(111)
 ax1.set_xlabel(r"True $\log\psi_\omega(\vec{\sigma})$")
 ax1.set_ylabel(r"Predicted $\log\psi_\omega(\vec{\sigma})$")
 ax1.set_title(r"(NQS-Bench-101): True vs. Predicted $\log\psi_\omega(\vec{\sigma})$")
+f1.set_edgecolor("black")
 
 
 ax1.grid(True)
@@ -191,16 +202,20 @@ graph2.update_layout(
 
 if trained_regimes["h=1.0e-6"]:
     
+    avg_test_loss_h1_0e6 = test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)
+    avg_train_loss_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
+    avg_valid_loss_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
+    
     dict_optimizer_h1_0e6 = optimizer_h1_0e6.param_groups[0]
     dict_optimizer_h1_0e6.pop('params')
     
     
     #ax1 = f1.add_axes(train_losses_h1_0e6)
     df_metrics_h1_0e6 = metrics_data.copy()
-    df_metrics_h1_0e6['regime'] = r"$h=10^{-6}$"
-    df_metrics_h1_0e6['test_loss'] = test_loss_h1_0e6
-    df_metrics_h1_0e6['train_loss'] = train_loss_h1_0e6
-    df_metrics_h1_0e6['valid_loss'] = valid_loss_h1_0e6
+    df_metrics_h1_0e6['regime'] = "h=1.0e-6"
+    df_metrics_h1_0e6['test_loss'] = avg_test_loss_h1_0e6
+    df_metrics_h1_0e6['train_loss'] = avg_train_loss_h1_0e6
+    df_metrics_h1_0e6['valid_loss'] = avg_valid_loss_h1_0e6
     df_metrics_h1_0e6['model_summary'] = str(summary(model_h1_0e6, INPUT_SIZE))
     df_metrics_h1_0e6['optimizer_name'] = optimizer_h1_0e6.__class__.__name__
     df_metrics_h1_0e6['optimizer_params'] = str(dict_optimizer_h1_0e6)
@@ -218,11 +233,11 @@ if trained_regimes["h=1.0e-6"]:
     
     ax2.plot(train_losses_h1_0e6, label=r"Train loss ($h = 10^{-6}$)")
     ax2.plot(valid_losses_h1_0e6, label=r"Valid loss ($h = 10^{-6}$)")
-    ax1.plot(y_true_h1_0e6, y_pred_h1_0e6, 's', markersize=1, label=r"$h = 10^{-6}$")
+    ax1.plot(y_true_h1_0e6, y_pred_h1_0e6, 's', markersize=1, label=r"$h = 10^{-6}$", alpha=0.5)
     
     
     
-    graph.add_trace(go.Scatter(x=y_true_h1_0e6, y=y_pred_h1_0e6, mode='markers', name=r"$h = 10^{-6}$"))
+    graph.add_trace(go.Scatter(x=y_true_h1_0e6, y=y_pred_h1_0e6, mode='markers', name=r"$h = 10^{-6}$", opacity=0.5))
     
 
     graph2.add_trace(go.Scatter(x=[e for e in range(1,EPOCHS+1,1)], y=valid_losses_h1_0e6, mode='lines', name=r"Valid loss ($h = 10^{-6}$)"))
@@ -236,6 +251,9 @@ if trained_regimes["h=1.0e-6"]:
     
 
 if trained_regimes["h=0.5"]:
+    avg_test_loss_h0_5, target_test_h0_5, pred_test_h0_5 = test(test_dataloader_h0_5, model_h0_5, loss_fn)
+    avg_train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5)
+    avg_valid_loss_h0_5, target_valid_h0_5, pred_valid_h0_5 = valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
     #perfect_prediction_x = [0,max(max(y_true_h0_5), max(y_pred_h0_5))]
     dict_optimizer_h0_5 = optimizer_h0_5.param_groups[0]
     dict_optimizer_h0_5.pop('params')
@@ -244,21 +262,33 @@ if trained_regimes["h=0.5"]:
     #ax1 = f1.add_axes(train_losses_h0_5)
     df_metrics_h0_5 = metrics_data.copy()
     df_metrics_h0_5['regime'] = "h=0.5"
-    df_metrics_h0_5['test_loss'] = test_loss_h0_5
-    df_metrics_h0_5['train_loss'] = train_loss_h0_5
-    df_metrics_h0_5['valid_loss'] = valid_loss_h0_5
+    df_metrics_h0_5['test_loss'] = avg_test_loss_h0_5
+    df_metrics_h0_5['train_loss'] = avg_train_loss_h0_5
+    df_metrics_h0_5['valid_loss'] = avg_valid_loss_h0_5
     df_metrics_h0_5['model_summary'] = str(summary(model_h0_5, INPUT_SIZE))
     df_metrics_h0_5['optimizer_name'] = optimizer_h0_5.__class__.__name__
     df_metrics_h0_5['optimizer_params'] = str(dict_optimizer_h0_5)
-    df_metrics_h0_5['R2'] = round(r2_score(y_pred_h0_5, y_true_h0_5),DECIMAL_PLACES_METRICS)
-    df_metrics_h0_5["MSE"] = round(mean_squared_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
-    df_metrics_h0_5["MAE"] = round(mean_absolute_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
-    df_metrics_h0_5["RMSE"] = round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
-    df_metrics_h0_5["MAPE"] = round(mean_absolute_percentage_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
-    df_metrics_h0_5["sMAPE"] = round(smape(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
+    
+    df_metrics_h0_5['R2_test'] = round(r2_score(pred_test_h0_5, target_test_h0_5),DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5['R2_train'] = round(r2_score(pred_train_h0_5, target_train_h0_5),DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5['R2_valid'] = round(r2_score(pred_valid_h0_5, target_valid_h0_5),DECIMAL_PLACES_METRICS)
+    
+    df_metrics_h0_5["MSE_test"] = round(mean_squared_error(pred_test_h0_5, target_test_h0_5),DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5["MSE_train"] = round(mean_squared_error(pred_train_h0_5, target_train_h0_5),DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5["MSE_valid"] = round(mean_squared_error(pred_valid_h0_5, target_valid_h0_5),DECIMAL_PLACES_METRICS)
+    
+    df_metrics_h0_5["MAE_test"] = round(mean_absolute_error(pred_test_h0_5, target_test_h0_5),DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5["MAE_train"] = round(mean_absolute_error(pred_train_h0_5, target_train_h0_5),DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5["MAE_valid"] = round(mean_absolute_error(pred_valid_h0_5, target_valid_h0_5),DECIMAL_PLACES_METRICS)
+    
+    #df_metrics_h0_5["RMSE"] = round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
+    #df_metrics_h0_5["MAPE"] = round(mean_absolute_percentage_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
+    #df_metrics_h0_5["sMAPE"] = round(smape(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
+    
     #df_metrics_h0_5["RMSLE"] = round(root_mean_squared_log_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
     #df_metrics_h0_5["MSLE"] = round(mean_squared_log_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
-    df_metrics_h0_5["hellinger_dist"] = round(hellinger_distance(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
+    
+    #df_metrics_h0_5["hellinger_dist"] = round(hellinger_distance(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
     '''
     var = round(np.var(y_pred_h0_5),4)
     rmse = round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),4)
@@ -273,11 +303,11 @@ if trained_regimes["h=0.5"]:
     
     ax2.plot(train_losses_h0_5, label="Train loss (h=0.5)")
     ax2.plot(valid_losses_h0_5, label="Valid loss (h=0.5)")
-    ax1.plot(y_true_h0_5, y_pred_h0_5, 's', markersize=1, label="h=0.5", alpha=0.6)
+    ax1.plot(target_test_h0_5, pred_test_h0_5, 's', markersize=1, label="h=0.5", alpha=0.5)
     
     #ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y = x (perfect prediction)", linewidth=0.5, color='cyan')
     #graph = go.Figure()
-    graph.add_trace(go.Scatter(x=y_true_h0_5, y=y_pred_h0_5, mode='markers', name="h=0.5"))
+    graph.add_trace(go.Scatter(x=target_test_h0_5, y=pred_test_h0_5, mode='markers', name="h=0.5", opacity=0.5))
     
     
     #graph.show()
@@ -299,6 +329,9 @@ if trained_regimes["h=0.5"]:
     
     
 if trained_regimes["h=1.0"]:
+    avg_test_loss_h1_0 = test(test_dataloader_h1_0, model_h1_0, loss_fn)
+    avg_train_loss_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0)
+    avg_valid_loss_h1_0 = valid(valid_dataloader_h1_0, model_h1_0, loss_fn)
     
     dict_optimizer_h1_0 = optimizer_h1_0.param_groups[0]
     dict_optimizer_h1_0.pop('params')
@@ -307,9 +340,9 @@ if trained_regimes["h=1.0"]:
     #ax1 = f1.add_axes(train_losses_h1_0)
     df_metrics_h1_0 = metrics_data.copy()
     df_metrics_h1_0['regime'] = "h=1.0"
-    df_metrics_h1_0['test_loss'] = test_loss_h1_0
-    df_metrics_h1_0['train_loss'] = train_loss_h1_0
-    df_metrics_h1_0['valid_loss'] = valid_loss_h1_0
+    df_metrics_h1_0['test_loss'] = avg_test_loss_h1_0
+    df_metrics_h1_0['train_loss'] = avg_train_loss_h1_0
+    df_metrics_h1_0['valid_loss'] = avg_valid_loss_h1_0
     df_metrics_h1_0['model_summary'] = str(summary(model_h1_0, INPUT_SIZE))
     df_metrics_h1_0['optimizer_name'] = optimizer_h1_0.__class__.__name__
     df_metrics_h1_0['optimizer_params'] = str(dict_optimizer_h1_0)
@@ -325,12 +358,12 @@ if trained_regimes["h=1.0"]:
     #perfect_prediction_x = [0,max(max(y_true_h1_0), max(y_pred_h1_0))]
     ax2.plot(train_losses_h1_0, label="Train Loss (h=1.0)")
     ax2.plot(valid_losses_h1_0, label="Valid Loss (h=1.0)")
-    ax1.plot(y_true_h1_0, y_pred_h1_0, 's', markersize=1, label="h=1.0")
+    ax1.plot(y_true_h1_0, y_pred_h1_0, 's', markersize=1, label="h=1.0", alpha=0.5)
     
     
     #ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y = x (perfect prediction)", linewidth=0.5, color='cyan')
     #graph = go.Figure()
-    graph.add_trace(go.Scatter(x=y_true_h1_0, y=y_pred_h1_0, mode='markers', name="h=1.0"))
+    graph.add_trace(go.Scatter(x=y_true_h1_0, y=y_pred_h1_0, mode='markers', name="h=1.0", opacity=0.5))
     #graph.add_trace(go.Scatter(x=perfect_prediction_x, y=perfect_prediction_x, mode='lines', name="y = x (perfect prediction)", marker=dict(color='cyan')))
     
     #graph.show()
@@ -346,6 +379,9 @@ if trained_regimes["h=1.0"]:
     df_metrics_all = pd.concat([df_metrics_all, pd.DataFrame([df_metrics_h1_0])], ignore_index=True)
     
 if trained_regimes["h=2.0"]:
+    avg_test_loss_h2_0 = test(test_dataloader_h2_0, model_h2_0, loss_fn)
+    avg_train_loss_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0)
+    avg_valid_loss_h2_0 = valid(valid_dataloader_h2_0, model_h2_0, loss_fn)
     
     dict_optimizer_h2_0 = optimizer_h2_0.param_groups[0]
     dict_optimizer_h2_0.pop('params')
@@ -354,9 +390,9 @@ if trained_regimes["h=2.0"]:
     #ax1 = f1.add_axes(train_losses_h2_0)
     df_metrics_h2_0 = metrics_data.copy()
     df_metrics_h2_0['regime'] = "h=2.0"
-    df_metrics_h2_0['test_loss'] = round(test_loss_h2_0,DECIMAL_PLACES_METRICS)
-    df_metrics_h2_0['train_loss'] = round(train_loss_h2_0,DECIMAL_PLACES_METRICS)
-    df_metrics_h2_0['valid_loss'] = round(valid_loss_h2_0,DECIMAL_PLACES_METRICS)
+    df_metrics_h2_0['test_loss'] = round(avg_test_loss_h2_0,DECIMAL_PLACES_METRICS)
+    df_metrics_h2_0['train_loss'] = round(avg_train_loss_h2_0,DECIMAL_PLACES_METRICS)
+    df_metrics_h2_0['valid_loss'] = round(avg_valid_loss_h2_0,DECIMAL_PLACES_METRICS)
     df_metrics_h2_0['model_summary'] = str(summary(model_h2_0, INPUT_SIZE))
     df_metrics_h2_0['optimizer_name'] = optimizer_h2_0.__class__.__name__
     df_metrics_h2_0['optimizer_params'] = str(dict_optimizer_h2_0)
@@ -372,9 +408,9 @@ if trained_regimes["h=2.0"]:
     #perfect_prediction_x = [0,max(max(y_true_h2_0), max(y_pred_h2_0))]
     ax2.plot(train_losses_h2_0, label="Train Loss (h=2.0)")
     ax2.plot(valid_losses_h2_0, label="Valid Loss (h=2.0)")
-    ax1.plot(y_true_h2_0, y_pred_h2_0, 's', markersize=1, label="h=2.0")
+    ax1.plot(y_true_h2_0, y_pred_h2_0, 's', markersize=1, label="h=2.0", alpha=0.5)
     
-    graph.add_trace(go.Scatter(x=y_true_h2_0, y=y_pred_h2_0, mode='markers', name="h=2.0"))
+    graph.add_trace(go.Scatter(x=y_true_h2_0, y=y_pred_h2_0, mode='markers', name="h=2.0", opacity=0.5))
     #graph.add_trace(go.Scatter(x=perfect_prediction_x, y=perfect_prediction_x, mode='lines', name="y = x (perfect prediction)", marker=dict(color='cyan')))
     
     #graph.show()
@@ -404,8 +440,8 @@ min_val = min(all_values, default=math.inf)
 max_val = max(all_values, default=-math.inf)
 
 perfect_prediction_x = [min_val, max_val]
-ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y=x (perfect prediction)", linewidth=0.7, color='cyan', alpha=0.5)
-graph.add_trace(go.Scatter(x=[min_val, max_val], y=[min_val, max_val], mode='lines', name="y=x (perfect prediction)", opacity=0.5, marker=dict(color='cyan')))
+ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y=x (perfect prediction)", linewidth=0.7, color='cyan', alpha=0.3)
+graph.add_trace(go.Scatter(x=[min_val, max_val], y=[min_val, max_val], mode='lines', name="y=x (perfect prediction)", opacity=0.3, marker=dict(color='cyan')))
     
 ax1.legend(title="Legend")
 ax2.legend(title="Legend")

@@ -113,7 +113,8 @@ for t in range(EPOCHS):
     
     if trained_regimes["h=0.5"]:
         print("Losses for h=0.5:\n")
-        train_loss_h0_5, valid_loss_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5), valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
+        train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5)
+        valid_loss_h0_5, target_valid_h0_5, pred_valid_h0_5 = valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
         train_losses_h0_5.append(train_loss_h0_5)
         valid_losses_h0_5.append(valid_loss_h0_5)
         
@@ -122,13 +123,14 @@ for t in range(EPOCHS):
         train_loss_h1_0, valid_loss_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0), valid(valid_dataloader_h1_0, model_h1_0, loss_fn)
         train_losses_h1_0.append(train_loss_h1_0)
         valid_losses_h1_0.append(valid_loss_h1_0)
+        
     if trained_regimes["h=2.0"]:
         print("Losses for h=2.0:\n")
         train_loss_h2_0, valid_loss_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0), valid(valid_dataloader_h2_0, model_h2_0, loss_fn)
         train_losses_h2_0.append(train_loss_h2_0)
         valid_losses_h2_0.append(valid_loss_h2_0)
     if trained_regimes["h=1.0e-6"]:
-        print(r"Losses for $h=10^{-6}$\n")
+        print("Losses for h=1.0e-6\n")
         train_loss_h1_0e6, valid_loss_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6), valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
         train_losses_h1_0e6.append(train_loss_h1_0e6)
         valid_losses_h1_0e6.append(valid_loss_h1_0e6)    
@@ -146,16 +148,16 @@ y_pred_h2_0, y_true_h2_0 = [], []
    
 
 if trained_regimes["h=0.5"]:
-    avg_test_loss_h0_5 = test(test_dataloader_h0_5, model_h0_5, loss_fn)
-    avg_train_loss_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5)
-    avg_valid_loss_h0_5 = valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
+    avg_test_loss_h0_5, target_test_h0_5, pred_test_h0_5 = test(test_dataloader_h0_5, model_h0_5, loss_fn)
+    avg_train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5)
+    avg_valid_loss_h0_5, target_valid_h0_5, pred_valid_h0_5 = valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
     
     print(f"Loss on the test set (h=0.5): {avg_test_loss_h0_5}.\n")
     #torch.save(model_h0_5.state_dict(), "saved_models\\model_h0_5.pth")
     #print("Saved PyTorch Model State to saved_models\\model_h0_5.pth")
     size = len(dataloader_h0_5.dataset)
     num_batches = len(dataloader_h0_5)
-    
+    '''
     with torch.no_grad():
         for X, y in dataloader_h0_5.dataset:
             #X, y = X.to(device), y.to(device)
@@ -167,9 +169,10 @@ if trained_regimes["h=0.5"]:
             y_true_h0_5.append(y)
     y_pred_h0_5 = [x.item() for x in y_pred_h0_5]
     y_true_h0_5 = [x.item() for x in y_true_h0_5]
+    '''
     #print("types y_pred, y_true: ",(y_pred), (y_true))
-    mse = round(mean_squared_error(y_true_h0_5, y_pred_h0_5),4)
-    mae = round(mean_absolute_error(y_true_h0_5, y_pred_h0_5),4)
+    #mse = round(mean_squared_error(y_true_h0_5, y_pred_h0_5),4)
+    #mae = round(mean_absolute_error(y_true_h0_5, y_pred_h0_5),4)
     
 
     # Create an instance of the Hellinger class
@@ -184,6 +187,7 @@ if trained_regimes["h=1.0"]:
     avg_test_loss_h1_0 = test(test_dataloader_h1_0, model_h1_0, loss_fn)
     avg_train_loss_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0)
     avg_valid_loss_h1_0 = valid(valid_dataloader_h1_0, model_h1_0, loss_fn)
+    
     print(f"Loss on the test set (h=1.0): {avg_test_loss_h1_0}.\n")
     torch.save(model_h1_0.state_dict(), "saved_models\\model_h1_0.pth")
     print("Saved PyTorch Model State to saved_models\\model_h1_0.pth")
@@ -230,6 +234,7 @@ if trained_regimes["h=1.0e-6"]:
     avg_test_loss_h1_0e6 = test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)
     avg_train_loss_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
     avg_valid_loss_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
+
     print(f"Loss on the test set (h=1.0e-6): {avg_test_loss_h1_0e6}.\n")
     torch.save(model_h1_0e6.state_dict(), "saved_models\\model_h1_0e6.pth")
     print("Saved PyTorch Model State to saved_models\\ model_h1_0e6.pth")

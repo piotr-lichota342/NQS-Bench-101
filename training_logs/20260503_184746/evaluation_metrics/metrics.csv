@@ -1,0 +1,129 @@
+regime,model_summary,test_loss,train_loss,valid_loss,training_time (s),epochs,input_size,batch_size,network_width,hidden_layers,train_proportion,test_proportion,valid_proportion,device,optimizer_name,optimizer_params,loss_fn,bias,avr_res,MBE,R2,RSS,TSS,adjusted_R2,MSE,RMSE,MAE,MAPE,wMAPE,sMAPE,MSLE,RMSLE,AIC,BIC,ESS,hellinger_dist
+$h=10^{-6}$,"==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+NeuralNetwork                            [32, 1]                   --
+├─Sequential: 1-1                        [32, 1]                   --
+│    └─Linear: 2-1                       [32, 512]                 6,656
+│    └─LayerNorm: 2-2                    [32, 512]                 1,024
+│    └─GELU: 2-3                         [32, 512]                 --
+│    └─Linear: 2-4                       [32, 512]                 262,656
+│    └─LayerNorm: 2-5                    [32, 512]                 1,024
+│    └─GELU: 2-6                         [32, 512]                 --
+│    └─Linear: 2-7                       [32, 512]                 262,656
+│    └─LayerNorm: 2-8                    [32, 512]                 1,024
+│    └─GELU: 2-9                         [32, 512]                 --
+│    └─Linear: 2-10                      [32, 512]                 262,656
+│    └─LayerNorm: 2-11                   [32, 512]                 1,024
+│    └─GELU: 2-12                        [32, 512]                 --
+│    └─Linear: 2-13                      [32, 512]                 262,656
+│    └─LayerNorm: 2-14                   [32, 512]                 1,024
+│    └─GELU: 2-15                        [32, 512]                 --
+│    └─Linear: 2-16                      [32, 1]                   513
+==========================================================================================
+Total params: 1,062,913
+Trainable params: 1,062,913
+Non-trainable params: 0
+Total mult-adds (Units.MEGABYTES): 34.01
+==========================================================================================
+Input size (MB): 0.00
+Forward/backward pass size (MB): 1.31
+Params size (MB): 4.25
+Estimated Total Size (MB): 5.56
+==========================================================================================",0.23575798315661295,6.077769043882495,8.382676464319228,63.47,10,"(32, 12)",32,512,4,0.8,0.05,0.15,cpu,Adam,"{'lr': 0.001, 'betas': (0.9, 0.999), 'eps': 1e-08, 'weight_decay': 0, 'amsgrad': False, 'maximize': False, 'foreach': None, 'capturable': False, 'differentiable': False, 'fused': None, 'decoupled_weight_decay': False}",MSELoss,,,,0.9906,,,,5.7308,2.3939,0.7774,340929379.8056,,0.995,,,,,,0.008
+h=0.5,"==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+NeuralNetwork                            [32, 1]                   --
+├─Sequential: 1-1                        [32, 1]                   --
+│    └─Linear: 2-1                       [32, 512]                 6,656
+│    └─LayerNorm: 2-2                    [32, 512]                 1,024
+│    └─GELU: 2-3                         [32, 512]                 --
+│    └─Linear: 2-4                       [32, 512]                 262,656
+│    └─LayerNorm: 2-5                    [32, 512]                 1,024
+│    └─GELU: 2-6                         [32, 512]                 --
+│    └─Linear: 2-7                       [32, 512]                 262,656
+│    └─LayerNorm: 2-8                    [32, 512]                 1,024
+│    └─GELU: 2-9                         [32, 512]                 --
+│    └─Linear: 2-10                      [32, 512]                 262,656
+│    └─LayerNorm: 2-11                   [32, 512]                 1,024
+│    └─GELU: 2-12                        [32, 512]                 --
+│    └─Linear: 2-13                      [32, 512]                 262,656
+│    └─LayerNorm: 2-14                   [32, 512]                 1,024
+│    └─GELU: 2-15                        [32, 512]                 --
+│    └─Linear: 2-16                      [32, 1]                   513
+==========================================================================================
+Total params: 1,062,913
+Trainable params: 1,062,913
+Non-trainable params: 0
+Total mult-adds (Units.MEGABYTES): 34.01
+==========================================================================================
+Input size (MB): 0.00
+Forward/backward pass size (MB): 1.31
+Params size (MB): 4.25
+Estimated Total Size (MB): 5.56
+==========================================================================================",0.008342505299619265,0.008786760476300294,0.006163596623810008,63.47,10,"(32, 12)",32,512,4,0.8,0.05,0.15,cpu,Adam,"{'lr': 0.001, 'betas': (0.9, 0.999), 'eps': 1e-08, 'weight_decay': 0, 'amsgrad': False, 'maximize': False, 'foreach': None, 'capturable': False, 'differentiable': False, 'fused': None, 'decoupled_weight_decay': False}",MSELoss,,,,0.9921,,,,0.0058,0.0759,0.0593,0.0121,,1.199,,,,,,0.005
+h=1.0,"==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+NeuralNetwork                            [32, 1]                   --
+├─Sequential: 1-1                        [32, 1]                   --
+│    └─Linear: 2-1                       [32, 512]                 6,656
+│    └─LayerNorm: 2-2                    [32, 512]                 1,024
+│    └─GELU: 2-3                         [32, 512]                 --
+│    └─Linear: 2-4                       [32, 512]                 262,656
+│    └─LayerNorm: 2-5                    [32, 512]                 1,024
+│    └─GELU: 2-6                         [32, 512]                 --
+│    └─Linear: 2-7                       [32, 512]                 262,656
+│    └─LayerNorm: 2-8                    [32, 512]                 1,024
+│    └─GELU: 2-9                         [32, 512]                 --
+│    └─Linear: 2-10                      [32, 512]                 262,656
+│    └─LayerNorm: 2-11                   [32, 512]                 1,024
+│    └─GELU: 2-12                        [32, 512]                 --
+│    └─Linear: 2-13                      [32, 512]                 262,656
+│    └─LayerNorm: 2-14                   [32, 512]                 1,024
+│    └─GELU: 2-15                        [32, 512]                 --
+│    └─Linear: 2-16                      [32, 1]                   513
+==========================================================================================
+Total params: 1,062,913
+Trainable params: 1,062,913
+Non-trainable params: 0
+Total mult-adds (Units.MEGABYTES): 34.01
+==========================================================================================
+Input size (MB): 0.00
+Forward/backward pass size (MB): 1.31
+Params size (MB): 4.25
+Estimated Total Size (MB): 5.56
+==========================================================================================",0.0008293355099989899,0.0017294778931632782,0.0017587146401638165,63.47,10,"(32, 12)",32,512,4,0.8,0.05,0.15,cpu,Adam,"{'lr': 0.001, 'betas': (0.9, 0.999), 'eps': 1e-08, 'weight_decay': 0, 'amsgrad': False, 'maximize': False, 'foreach': None, 'capturable': False, 'differentiable': False, 'fused': None, 'decoupled_weight_decay': False}",MSELoss,,,,0.9908,,,,0.0017,0.0413,0.0338,0.0078,,0.7834,,,,,,0.003
+h=2.0,"==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+NeuralNetwork                            [32, 1]                   --
+├─Sequential: 1-1                        [32, 1]                   --
+│    └─Linear: 2-1                       [32, 512]                 6,656
+│    └─LayerNorm: 2-2                    [32, 512]                 1,024
+│    └─GELU: 2-3                         [32, 512]                 --
+│    └─Linear: 2-4                       [32, 512]                 262,656
+│    └─LayerNorm: 2-5                    [32, 512]                 1,024
+│    └─GELU: 2-6                         [32, 512]                 --
+│    └─Linear: 2-7                       [32, 512]                 262,656
+│    └─LayerNorm: 2-8                    [32, 512]                 1,024
+│    └─GELU: 2-9                         [32, 512]                 --
+│    └─Linear: 2-10                      [32, 512]                 262,656
+│    └─LayerNorm: 2-11                   [32, 512]                 1,024
+│    └─GELU: 2-12                        [32, 512]                 --
+│    └─Linear: 2-13                      [32, 512]                 262,656
+│    └─LayerNorm: 2-14                   [32, 512]                 1,024
+│    └─GELU: 2-15                        [32, 512]                 --
+│    └─Linear: 2-16                      [32, 1]                   513
+==========================================================================================
+Total params: 1,062,913
+Trainable params: 1,062,913
+Non-trainable params: 0
+Total mult-adds (Units.MEGABYTES): 34.01
+==========================================================================================
+Input size (MB): 0.00
+Forward/backward pass size (MB): 1.31
+Params size (MB): 4.25
+Estimated Total Size (MB): 5.56
+==========================================================================================",0.0003,0.0002,0.0002,63.47,10,"(32, 12)",32,512,4,0.8,0.05,0.15,cpu,Adam,"{'lr': 0.001, 'betas': (0.9, 0.999), 'eps': 1e-08, 'weight_decay': 0, 'amsgrad': False, 'maximize': False, 'foreach': None, 'capturable': False, 'differentiable': False, 'fused': None, 'decoupled_weight_decay': False}",MSELoss,,,,0.9963,,,,0.0002,0.013,0.0105,0.0025,,0.2517,,,,,,0.001

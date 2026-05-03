@@ -14,9 +14,9 @@ VALID_PROPORTION = 0.15
 
 trained_regimes = {
     "h=0.5":True,
-    "h=1.0":True,
-    "h=2.0":True,
-    "h=1.0e-6":True
+    "h=1.0":False,
+    "h=2.0":False,
+    "h=1.0e-6":False
 }
 
 device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
