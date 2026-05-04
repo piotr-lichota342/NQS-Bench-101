@@ -8,7 +8,7 @@ from dataset_loading import valid_dataloader_h0_5, valid_dataloader_h1_0, valid_
 
 from main import valid_losses_h1_0e6, valid_losses_h0_5, valid_losses_h1_0, valid_losses_h2_0
 from main import loss_fn, y_true_h1_0e6, y_pred_h1_0e6, y_true_h0_5, y_pred_h0_5, y_true_h1_0, y_pred_h1_0, y_true_h2_0, y_pred_h2_0, optimizer_h0_5, optimizer_h1_0, optimizer_h1_0e6, optimizer_h2_0, total_training_time
-from config import trained_regimes, EPOCHS, BATCH_SIZE, W, TEST_PROPORTION, TRAIN_PROPORTION, VALID_PROPORTION, HIDDEN_LAYERS, INPUT_SIZE, device, trained_regimes, DECIMAL_PLACES_METRICS
+from config import trained_regimes, EPOCHS, BATCH_SIZE, W, TEST_PROPORTION, TRAIN_PROPORTION, VALID_PROPORTION, HIDDEN_LAYERS, INPUT_SIZE, device, trained_regimes, DECIMAL_PLACES_METRICS, SAVING_WEIGHTS
 from torchinfo import summary
 from test import test
 from valid import valid
@@ -51,35 +51,46 @@ def smape(a, f):
 
 def hellinger_distance(p,q):
     #Turning into probabilities
-    p_prob, q_prob = [np.abs(a) for a in p], [np.abs(a) for a in q]
-    p_prob, q_prob = [a/np.sum(p_prob) for a in p_prob], [a/np.sum(q_prob) for a in q_prob]
+    p, q = np.array(p), np.array(q)
+    #p_prob, q_prob = [np.abs(a) for a in p], [np.abs(a) for a in q]
+    p, q = np.abs(p), np.abs(q)
+    #p_prob, q_prob = [a/np.sum(p_prob) for a in p_prob], [a/np.sum(q_prob) for a in q_prob]
+    p = p / np.sum(p)
+    q = q / np.sum(q)
+    
+    
     #print(f"p_prob, q prob: {p_prob}, {q_prob}")
-    final_result = 0   
-    for i in range(len(p_prob)):
-        diff = (p_prob[i])**(0.5) - (q_prob[i])**(0.5)
-        final_result += diff**2
-    final_result = (final_result**(0.5)) * (1/(2**(0.5)))
-    final_result = round(final_result,3)
+
+    #final_result = 0.0   
+    #for i in range(len(p_prob)):
+    diff = ((p)**(0.5) - (q)**(0.5))**2
+    diff = np.sum(diff)
+    diff = diff**(0.5)
+    diff = (1/(2**(0.5))) * diff
+    
+    final_result = diff
+   
+    #final_result = round(final_result,DECIMAL_PLACES_METRICS)
     
     return final_result
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-os.makedirs(os.path.join('training_logs', f"{timestamp}"))
-os.makedirs(os.path.join(f'training_logs\\{timestamp}', "curves"))
-os.makedirs(os.path.join(f'training_logs\\{timestamp}', "evaluation_metrics"))
-os.makedirs(os.path.join(f'training_logs\\{timestamp}', "model_weights"))
-save_path_loss_curve = f"training_logs\\{timestamp}\\curves\\loss_curve.png"
-save_path_pred_true = f"training_logs\\{timestamp}\\curves\\pred_true_curve.png"
+os.makedirs(os.path.join('NQS-Bench-101\\training_logs', f"{timestamp}"))
+os.makedirs(os.path.join(f'NQS-Bench-101\\training_logs\\{timestamp}', "curves"))
+os.makedirs(os.path.join(f'NQS-Bench-101\\training_logs\\{timestamp}', "evaluation_metrics"))
+os.makedirs(os.path.join(f'NQS-Bench-101\\training_logs\\{timestamp}', "model_weights"))
+save_path_loss_curve = f"NQS-Bench-101\\training_logs\\{timestamp}\\curves\\loss_curve.png"
+save_path_pred_true = f"NQS-Bench-101\\training_logs\\{timestamp}\\curves\\pred_true_curve.png"
 
-save_path_loss_curve_html = f"training_logs\\{timestamp}\\curves\\loss_curve.html"
-save_path_pred_true_html = f"training_logs\\{timestamp}\\curves\\pred_true_curve.html"
+save_path_loss_curve_html = f"NQS-Bench-101\\training_logs\\{timestamp}\\curves\\loss_curve.html"
+save_path_pred_true_html = f"NQS-Bench-101\\training_logs\\{timestamp}\\curves\\pred_true_curve.html"
 
-model_weights_h0_5_path = f"training_logs\\{timestamp}\\model_weights\\model_weights_h0_5.pth"
-model_weights_h1_0_path = f"training_logs\\{timestamp}\\model_weights\\model_weights_h1_0.pth"
-model_weights_h2_0_path = f"training_logs\\{timestamp}\\model_weights\\model_weights_h2_0.pth"
-model_weights_h1_0e6_path = f"training_logs\\{timestamp}\\model_weights\\model_weights_h1_0e6.pth"
+model_weights_h0_5_path = f"NQS-Bench-101\\training_logs\\{timestamp}\\model_weights\\model_weights_h0_5.pth"
+model_weights_h1_0_path = f"NQS-Bench-101\\training_logs\\{timestamp}\\model_weights\\model_weights_h1_0.pth"
+model_weights_h2_0_path = f"NQS-Bench-101\\training_logs\\{timestamp}\\model_weights\\model_weights_h2_0.pth"
+model_weights_h1_0e6_path = f"NQS-Bench-101\\training_logs\\{timestamp}\\model_weights\\model_weights_h1_0e6.pth"
 
-csv_file_path = f'training_logs\\{timestamp}\\evaluation_metrics\\metrics.csv'
+csv_file_path = f'NQS-Bench-101\\training_logs\\{timestamp}\\evaluation_metrics\\metrics.csv'
 
 '''
 r2 = round(r2_score(y_pred_h0_5, y_true_h0_5),4)
@@ -111,11 +122,14 @@ print(f"Mean squared log error (h=0.5): {msle}")
 
 metrics_data = {
     'regime': None,
-    'model_summary': None, # summary_str
+    'total_params':None,
+    'train_params': None,
+    'non_train_params': None,
+    #'model_summary': None, # summary_str
     'test_loss':None,
     'train_loss':None,
     'valid_loss':None,
-    'training_time (s)': total_training_time,
+    'train_time (s)': total_training_time,
     'epochs': EPOCHS,
     'input_size': INPUT_SIZE,
     'batch_size': BATCH_SIZE,
@@ -128,31 +142,33 @@ metrics_data = {
     'optimizer_name': None, # optimizer_h0_5.__class__.__name__
     'optimizer_params': None, # str(dict_optimizer)
     'loss_fn': str(loss_fn.__class__.__name__),
-    'bias': None,
-    'avr_res': None,
-    'MBE': None,
+    #'bias': None,
+    #'avr_res': None,
+    #'MBE': None,
     'R2_test': None,
     'R2_train': None,
     'R2_valid': None,
-    'RSS': None,
-    'TSS': None,
-    'adjusted_R2': None,
+    #'RSS': None,
+    #'TSS': None,
+    #'adjusted_R2': None,
     'MSE_test': None,
     'MSE_train': None,
     'MSE_valid': None,
-    'RMSE': None,
+    #'RMSE': None,
     'MAE_test': None,
     'MAE_train': None,
     'MAE_valid': None,
-    'MAPE': None,
-    'wMAPE': None,
-    'sMAPE': None,
-    'MSLE': None,
-    'RMSLE': None,
-    'AIC': None,
-    'BIC': None,
-    'ESS': None,
-    'hellinger_dist': None
+    #'MAPE': None,
+    #'wMAPE': None,
+    #'sMAPE': None,
+    #'MSLE': None,
+    #'RMSLE': None,
+    #'AIC': None,
+    #'BIC': None,
+    #'ESS': None,
+    'hellinger_dist_test': None,
+    'hellinger_dist_train': None,
+    'hellinger_dist_valid': None
     
 }
 
@@ -160,13 +176,13 @@ metrics_data = {
 #print(f"Train loss length: {train_losses}")
 df_metrics_all = pd.DataFrame()
 
-f1 = plt.figure()
+f1 = plt.figure(edgecolor='black')
 f2 = plt.figure()
 ax1 = f1.add_subplot(111)
 ax2 = f2.add_subplot(111)
 ax1.set_xlabel(r"True $\log\psi_\omega(\vec{\sigma})$")
 ax1.set_ylabel(r"Predicted $\log\psi_\omega(\vec{\sigma})$")
-ax1.set_title(r"(NQS-Bench-101): True vs. Predicted $\log\psi_\omega(\vec{\sigma})$")
+
 f1.set_edgecolor("black")
 
 
@@ -245,7 +261,7 @@ if trained_regimes["h=1.0e-6"]:
     
     #graph2.show()
     #graph2.write_html(save_path_loss_curve_html)
-    torch.save(model_h1_0e6.state_dict(), model_weights_h1_0e6_path)
+    torch.save(model_h1_0e6.state_dict(), model_weights_h1_0e6_path) if SAVING_WEIGHTS else None
     
     df_metrics_all = pd.concat([df_metrics_all, pd.DataFrame([df_metrics_h1_0e6])], ignore_index=True)
     
@@ -258,14 +274,22 @@ if trained_regimes["h=0.5"]:
     dict_optimizer_h0_5 = optimizer_h0_5.param_groups[0]
     dict_optimizer_h0_5.pop('params')
     
+    total_params = sum(p.numel() for p in model_h0_5.parameters())
+    train_params = sum(p.numel() for p in model_h0_5.parameters() if p.requires_grad)
+    
+
+    
     
     #ax1 = f1.add_axes(train_losses_h0_5)
     df_metrics_h0_5 = metrics_data.copy()
     df_metrics_h0_5['regime'] = "h=0.5"
-    df_metrics_h0_5['test_loss'] = avg_test_loss_h0_5
-    df_metrics_h0_5['train_loss'] = avg_train_loss_h0_5
-    df_metrics_h0_5['valid_loss'] = avg_valid_loss_h0_5
-    df_metrics_h0_5['model_summary'] = str(summary(model_h0_5, INPUT_SIZE))
+    df_metrics_h0_5['test_loss'] = round(avg_test_loss_h0_5,DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5['train_loss'] = round(avg_train_loss_h0_5,DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5['valid_loss'] = round(avg_valid_loss_h0_5,DECIMAL_PLACES_METRICS)
+    #df_metrics_h0_5['model_summary'] = str(summary(model_h0_5, INPUT_SIZE))
+    df_metrics_h0_5['total_params'] = total_params
+    df_metrics_h0_5['train_params'] = train_params
+    df_metrics_h0_5['non_train_params'] = total_params - train_params
     df_metrics_h0_5['optimizer_name'] = optimizer_h0_5.__class__.__name__
     df_metrics_h0_5['optimizer_params'] = str(dict_optimizer_h0_5)
     
@@ -280,6 +304,10 @@ if trained_regimes["h=0.5"]:
     df_metrics_h0_5["MAE_test"] = round(mean_absolute_error(pred_test_h0_5, target_test_h0_5),DECIMAL_PLACES_METRICS)
     df_metrics_h0_5["MAE_train"] = round(mean_absolute_error(pred_train_h0_5, target_train_h0_5),DECIMAL_PLACES_METRICS)
     df_metrics_h0_5["MAE_valid"] = round(mean_absolute_error(pred_valid_h0_5, target_valid_h0_5),DECIMAL_PLACES_METRICS)
+    
+    df_metrics_h0_5["hellinger_dist_test"] = np.round(hellinger_distance(pred_test_h0_5, target_test_h0_5),decimals=DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5["hellinger_dist_train"] = hellinger_distance(pred_train_h0_5, target_train_h0_5)
+    df_metrics_h0_5["hellinger_dist_valid"] = np.round(hellinger_distance(pred_valid_h0_5, target_valid_h0_5),decimals=DECIMAL_PLACES_METRICS)
     
     #df_metrics_h0_5["RMSE"] = round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
     #df_metrics_h0_5["MAPE"] = round(mean_absolute_percentage_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
@@ -298,12 +326,15 @@ if trained_regimes["h=0.5"]:
     rmse = round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),4)
     rmsle = round(root_mean_squared_log_error(y_true_h0_5, y_pred_h0_5),4)
     msle = round(mean_squared_log_error(y_true_h0_5, y_pred_h0_5),4)
-    hell_dist = hellinger_distance(y_pred_h0_5, y_true_h0_5)    
+    hell_dist = hellinger_distance(y_pred_h0_5, y_true_h0_5)
+        
     '''
-    
+    plot_metrics = "\n"+r"$R^2$"+f"={round(r2_score(pred_test_h0_5, target_test_h0_5),DECIMAL_PLACES_METRICS)}, MSE={round(mean_squared_error(pred_test_h0_5, target_test_h0_5),DECIMAL_PLACES_METRICS)}, MAE={round(mean_absolute_error(pred_test_h0_5, target_test_h0_5),DECIMAL_PLACES_METRICS)}"
+    plot_title = r"(NQS-Bench-101): True vs. Predicted $\log\psi_\omega(\vec{\sigma})$"
+    ax1.set_title(plot_title + plot_metrics)
     ax2.plot(train_losses_h0_5, label="Train loss (h=0.5)")
     ax2.plot(valid_losses_h0_5, label="Valid loss (h=0.5)")
-    ax1.plot(target_test_h0_5, pred_test_h0_5, 's', markersize=1, label="h=0.5", alpha=0.5)
+    ax1.plot(target_test_h0_5, pred_test_h0_5, 'o', markersize=5, label="h=0.5", alpha=0.5, mec='black', c = "#5e98ff")
     
     #ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y = x (perfect prediction)", linewidth=0.5, color='cyan')
     #graph = go.Figure()
@@ -318,7 +349,7 @@ if trained_regimes["h=0.5"]:
     graph2.add_trace(go.Scatter(x=[e for e in range(1,EPOCHS+1,1)], y=train_losses_h0_5, mode='lines', name="Train loss (h=0.5)"))
     
     
-    torch.save(model_h0_5.state_dict(), model_weights_h0_5_path)
+    torch.save(model_h0_5.state_dict(), model_weights_h0_5_path) if SAVING_WEIGHTS else None
     df_metrics_all = pd.concat([df_metrics_all, pd.DataFrame([df_metrics_h0_5])], ignore_index=True)
     
     
@@ -374,7 +405,7 @@ if trained_regimes["h=1.0"]:
     graph2.add_trace(go.Scatter(x=[e for e in range(1,EPOCHS+1,1)], y=train_losses_h1_0, mode='lines', name="Train loss (h=1.0)"))
     
     
-    torch.save(model_h1_0.state_dict(), model_weights_h1_0_path)
+    torch.save(model_h1_0.state_dict(), model_weights_h1_0_path) if SAVING_WEIGHTS else None
     
     df_metrics_all = pd.concat([df_metrics_all, pd.DataFrame([df_metrics_h1_0])], ignore_index=True)
     
@@ -421,7 +452,7 @@ if trained_regimes["h=2.0"]:
     graph2.add_trace(go.Scatter(x=[e for e in range(1,EPOCHS+1,1)], y=train_losses_h2_0, mode='lines', name="Train loss (h=2.0)"))
     
     
-    torch.save(model_h2_0.state_dict(), model_weights_h2_0_path)
+    torch.save(model_h2_0.state_dict(), model_weights_h2_0_path) if SAVING_WEIGHTS else None
     
     df_metrics_all = pd.concat([df_metrics_all, pd.DataFrame([df_metrics_h2_0])], ignore_index=True)
     
@@ -460,11 +491,3 @@ graph2.show()
 graph2.write_html(save_path_loss_curve_html)
 
 df_metrics_all.to_csv(csv_file_path, index=False)
-
-
-
-
-
-
-
-

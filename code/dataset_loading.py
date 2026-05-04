@@ -14,16 +14,17 @@ from config import BATCH_SIZE, TRAIN_PROPORTION, TEST_PROPORTION
 
 
 csv_filenames_dict = {
-    'h=0.5':'datasets\\1d_tfim_N12_h0.5_full_dataset.csv',
-    'h=1.0':'datasets\\1d_tfim_N12_h1.0_full_dataset.csv',
-    'h=1.0e-6':'datasets\\1d_tfim_N12_h1.0e-6_full_dataset.csv',
-    'h=2.0':'datasets\\1d_tfim_N12_h2.0_full_dataset.csv'  
+    'h=0.5':'NQS-Bench-101\\datasets\\1d_tfim_N12_h0.5_full_dataset.csv',
+    'h=1.0':'NQS-Bench-101\\datasets\\1d_tfim_N12_h1.0_full_dataset.csv',
+    'h=1.0e-6':'NQS-Bench-101\\datasets\\1d_tfim_N12_h1.0e-6_full_dataset.csv',
+    'h=2.0':'NQS-Bench-101\\datasets\\1d_tfim_N12_h2.0_full_dataset.csv'  
 }
 
 
 class CSVDataset(Dataset):
     def __init__(self, filename):
         self.data = pd.read_csv(filename, dtype={"config": str})
+        self.data["amplitude"] = self.data["amplitude"].sort_values(ascending=False)
        
  
     def __len__(self):
@@ -35,11 +36,14 @@ class CSVDataset(Dataset):
         config_numeric_list = [int(x) for x in row["config"]]
         #print(config_numeric_list)
         
+        
         features = torch.tensor(config_numeric_list, dtype=torch.float32)
     
         target = torch.tensor(np.log(row["amplitude"]), dtype=torch.float32)
         
         return features, target
+    
+    
     
     
 
@@ -59,10 +63,10 @@ print(f"Valid size h=0.5: {int(len(dataset_h0_5) - ((TRAIN_PROPORTION+TEST_PROPO
 print(f"Dataset length h=0.5: {len(dataset_h0_5)}")
  
 # Create DataLoaders
-dataloader_h0_5 = DataLoader(dataset_h0_5, batch_size=BATCH_SIZE, shuffle=True)
-dataloader_h1_0 = DataLoader(dataset_h1_0, batch_size=BATCH_SIZE, shuffle=True)
-dataloader_h1_0e6 = DataLoader(dataset_h1_0e6, batch_size=BATCH_SIZE, shuffle=True)
-dataloader_h2_0 = DataLoader(dataset_h2_0, batch_size=BATCH_SIZE, shuffle=True)
+dataloader_h0_5 = DataLoader(dataset_h0_5, batch_size=BATCH_SIZE, shuffle=False)
+dataloader_h1_0 = DataLoader(dataset_h1_0, batch_size=BATCH_SIZE, shuffle=False)
+dataloader_h1_0e6 = DataLoader(dataset_h1_0e6, batch_size=BATCH_SIZE, shuffle=False)
+dataloader_h2_0 = DataLoader(dataset_h2_0, batch_size=BATCH_SIZE, shuffle=False)
 
 '''
 for features, targets in dataloader:
@@ -78,10 +82,10 @@ train_size = int(TRAIN_PROPORTION * n)
 test_size = int(TEST_PROPORTION * n)
 valid_size = n - train_size - test_size
 
-train_dataset_h0_5, test_dataset_h0_5, valid_dataset_h0_5 = random_split(dataset_h0_5, [train_size, test_size, valid_size])
-train_dataset_h1_0, test_dataset_h1_0, valid_dataset_h1_0 = random_split(dataset_h1_0, [train_size, test_size, valid_size])
-train_dataset_h2_0, test_dataset_h2_0, valid_dataset_h2_0 = random_split(dataset_h2_0, [train_size, test_size, valid_size])
-train_dataset_h1_0e6, test_dataset_h1_0e6, valid_dataset_h1_0e6 = random_split(dataset_h1_0e6, [train_size, test_size, valid_size])
+train_dataset_h0_5, test_dataset_h0_5, valid_dataset_h0_5 = dataset_h0_5.data.iloc[:train_size], dataset_h0_5.data.iloc[train_size:train_size+test_size], dataset_h0_5.data.iloc[train_size+test_size:]
+train_dataset_h1_0, test_dataset_h1_0, valid_dataset_h1_0 = dataset_h1_0.data.iloc[:train_size], dataset_h1_0.data.iloc[train_size:train_size+test_size], dataset_h1_0.data.iloc[train_size+test_size:]
+train_dataset_h2_0, test_dataset_h2_0, valid_dataset_h2_0 = dataset_h2_0.data.iloc[:train_size], dataset_h2_0.data.iloc[train_size:train_size+test_size], dataset_h2_0.data.iloc[train_size+test_size:]
+train_dataset_h1_0e6, test_dataset_h1_0e6, valid_dataset_h1_0e6 = dataset_h1_0e6.data.iloc[:train_size], dataset_h1_0e6.data.iloc[train_size:], dataset_h1_0e6.data.iloc[train_size+test_size:]
  
 train_dataloader_h0_5, test_dataloader_h0_5, valid_dataloader_h0_5 = DataLoader(train_dataset_h0_5, batch_size=BATCH_SIZE, shuffle=True), DataLoader(test_dataset_h0_5, batch_size=BATCH_SIZE, shuffle=False), DataLoader(valid_dataset_h0_5, batch_size=BATCH_SIZE, shuffle=False)
 train_dataloader_h1_0, test_dataloader_h1_0, valid_dataloader_h1_0 = DataLoader(train_dataset_h1_0, batch_size=BATCH_SIZE, shuffle=True), DataLoader(test_dataset_h1_0, batch_size=BATCH_SIZE, shuffle=False), DataLoader(valid_dataset_h1_0, batch_size=BATCH_SIZE, shuffle=False)

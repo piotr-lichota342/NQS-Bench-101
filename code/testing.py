@@ -1,4 +1,5 @@
-from main import optimizer_h0_5
+#from main import optimizer_h0_5
+import pandas as pd
 
 x = 1.5625000000023461e-38
 print(x**2)
@@ -11,6 +12,9 @@ ax1.plot(range(0,10))
 ax2 = f2.add_subplot(111)
 ax2.plot(range(10,20))
 plt.show()
+
+x = pd.DataFrame()
+x["test"] = [0]
 
 
 
