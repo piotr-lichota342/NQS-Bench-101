@@ -7,7 +7,13 @@ import pandas as pd
 from torch.utils.data import random_split
 import numpy as np
 
-from config import BATCH_SIZE, TRAIN_PROPORTION, TEST_PROPORTION
+from config import BATCH_SIZE, TRAIN_PROPORTION, TEST_PROPORTION, DATASET_SIZE
+
+n = DATASET_SIZE
+
+train_size = int(TRAIN_PROPORTION * n)
+test_size = int(TEST_PROPORTION * n)
+valid_size = n - train_size - test_size
 
 
 # Initialize the dataset
@@ -22,9 +28,10 @@ csv_filenames_dict = {
 
 
 class CSVDataset(Dataset):
-    def __init__(self, filename):
-        self.data = pd.read_csv(filename, dtype={"config": str})
-        self.data["amplitude"] = self.data["amplitude"].sort_values(ascending=False)
+    def __init__(self, dataframe):
+        self.data = dataframe # pd.read_csv(filename, dtype={"config": str})
+        self.data = self.data.sort_values("amplitude", ascending=False)
+        #print(f"Sorted Amplitudes: {self.data["amplitude"].iloc[0:10]}")
        
  
     def __len__(self):
@@ -51,22 +58,35 @@ class CSVDataset(Dataset):
 #csv_file = '1d_tfim_N12_h0.5_full_dataset.csv'
 
 #merged_df = pd.concat(map(pd.read_csv, csv_filenames), ignore_index=True)
+csv_dataset_h0_5 = pd.read_csv(csv_filenames_dict['h=0.5'], dtype={"config": str})
+csv_dataset_h1_0 = pd.read_csv(csv_filenames_dict['h=1.0'], dtype={"config": str})
+csv_dataset_h2_0 = pd.read_csv(csv_filenames_dict['h=2.0'], dtype={"config": str})
+csv_dataset_h1_0e6 = pd.read_csv(csv_filenames_dict['h=1.0e-6'], dtype={"config": str})
+
+train_dataset_h0_5, test_dataset_h0_5, valid_dataset_h0_5 = CSVDataset(csv_dataset_h0_5.iloc[:train_size]), CSVDataset(csv_dataset_h0_5.iloc[train_size:train_size+test_size]), CSVDataset(csv_dataset_h0_5.iloc[train_size+test_size:])
+train_dataset_h1_0, test_dataset_h1_0, valid_dataset_h1_0 = CSVDataset(csv_dataset_h1_0.iloc[:train_size]), CSVDataset(csv_dataset_h1_0.iloc[train_size:train_size+test_size]), CSVDataset(csv_dataset_h1_0.iloc[train_size+test_size:])
+train_dataset_h2_0, test_dataset_h2_0, valid_dataset_h2_0 = CSVDataset(csv_dataset_h2_0.iloc[:train_size]), CSVDataset(csv_dataset_h2_0.iloc[train_size:train_size+test_size]), CSVDataset(csv_dataset_h2_0.iloc[train_size+test_size:])
+train_dataset_h1_0e6, test_dataset_h1_0e6, valid_dataset_h1_0e6 = CSVDataset(csv_dataset_h1_0e6.iloc[:train_size]), CSVDataset(csv_dataset_h1_0e6.iloc[train_size:]), CSVDataset(csv_dataset_h1_0e6.iloc[train_size+test_size:])
+
+'''
 dataset_h0_5 = CSVDataset(csv_filenames_dict['h=0.5'])
 dataset_h1_0 = CSVDataset(csv_filenames_dict['h=1.0'])
 dataset_h1_0e6 = CSVDataset(csv_filenames_dict['h=1.0e-6'])
 dataset_h2_0 = CSVDataset(csv_filenames_dict['h=2.0'])
+'''
 
-
-print(f"Train size for h=0.5: {int(TRAIN_PROPORTION*len(dataset_h0_5))}")
-print(f"Test size h=0.5: {int(TEST_PROPORTION*len(dataset_h0_5))}")
-print(f"Valid size h=0.5: {int(len(dataset_h0_5) - ((TRAIN_PROPORTION+TEST_PROPORTION)*len(dataset_h0_5)))}")
-print(f"Dataset length h=0.5: {len(dataset_h0_5)}")
+print(f"Train size for h=0.5: {int(TRAIN_PROPORTION*n)}")
+print(f"Test size h=0.5: {int(TEST_PROPORTION*n)}")
+print(f"Valid size h=0.5: {int(n - ((TRAIN_PROPORTION+TEST_PROPORTION)*n))}")
+print(f"Dataset length h=0.5: {n}")
  
 # Create DataLoaders
+'''
 dataloader_h0_5 = DataLoader(dataset_h0_5, batch_size=BATCH_SIZE, shuffle=False)
 dataloader_h1_0 = DataLoader(dataset_h1_0, batch_size=BATCH_SIZE, shuffle=False)
 dataloader_h1_0e6 = DataLoader(dataset_h1_0e6, batch_size=BATCH_SIZE, shuffle=False)
 dataloader_h2_0 = DataLoader(dataset_h2_0, batch_size=BATCH_SIZE, shuffle=False)
+'''
 
 '''
 for features, targets in dataloader:
@@ -75,17 +95,6 @@ for features, targets in dataloader:
 '''
 
 
-
-n = len(dataset_h0_5)
-
-train_size = int(TRAIN_PROPORTION * n)
-test_size = int(TEST_PROPORTION * n)
-valid_size = n - train_size - test_size
-
-train_dataset_h0_5, test_dataset_h0_5, valid_dataset_h0_5 = dataset_h0_5.data.iloc[:train_size], dataset_h0_5.data.iloc[train_size:train_size+test_size], dataset_h0_5.data.iloc[train_size+test_size:]
-train_dataset_h1_0, test_dataset_h1_0, valid_dataset_h1_0 = dataset_h1_0.data.iloc[:train_size], dataset_h1_0.data.iloc[train_size:train_size+test_size], dataset_h1_0.data.iloc[train_size+test_size:]
-train_dataset_h2_0, test_dataset_h2_0, valid_dataset_h2_0 = dataset_h2_0.data.iloc[:train_size], dataset_h2_0.data.iloc[train_size:train_size+test_size], dataset_h2_0.data.iloc[train_size+test_size:]
-train_dataset_h1_0e6, test_dataset_h1_0e6, valid_dataset_h1_0e6 = dataset_h1_0e6.data.iloc[:train_size], dataset_h1_0e6.data.iloc[train_size:], dataset_h1_0e6.data.iloc[train_size+test_size:]
  
 train_dataloader_h0_5, test_dataloader_h0_5, valid_dataloader_h0_5 = DataLoader(train_dataset_h0_5, batch_size=BATCH_SIZE, shuffle=True), DataLoader(test_dataset_h0_5, batch_size=BATCH_SIZE, shuffle=False), DataLoader(valid_dataset_h0_5, batch_size=BATCH_SIZE, shuffle=False)
 train_dataloader_h1_0, test_dataloader_h1_0, valid_dataloader_h1_0 = DataLoader(train_dataset_h1_0, batch_size=BATCH_SIZE, shuffle=True), DataLoader(test_dataset_h1_0, batch_size=BATCH_SIZE, shuffle=False), DataLoader(valid_dataset_h1_0, batch_size=BATCH_SIZE, shuffle=False)

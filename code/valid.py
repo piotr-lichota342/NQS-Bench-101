@@ -5,12 +5,15 @@ from torchvision import datasets
 from torchvision.transforms import ToTensor
 import pandas as pd
 from torch.utils.data import random_split
+import numpy as np
 
 from config import device
 
 def valid(dataloader, model, loss_fn):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
+    if num_batches==0:
+        return np.nan, [], []
     model.eval()
     test_loss = 0
     target_points, pred_points, losses = [], [], []

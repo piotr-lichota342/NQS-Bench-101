@@ -17,6 +17,7 @@ import plotly.graph_objects as go
 import torch
 import math
 import os
+import itertools
 import numpy as np
 from sklearn.metrics import r2_score, mean_squared_error, root_mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, root_mean_squared_log_error, mean_squared_log_error
 import pandas as pd
@@ -50,6 +51,7 @@ def smape(a, f):
     return 1/len(a) * np.sum(2 * np.abs(f_np-a_np) / (np.abs(a_np) + np.abs(f_np))*100)
 
 def hellinger_distance(p,q):
+    print("Hellinger distance")
     #Turning into probabilities
     p, q = np.array(p), np.array(q)
     #p_prob, q_prob = [np.abs(a) for a in p], [np.abs(a) for a in q]
@@ -57,6 +59,7 @@ def hellinger_distance(p,q):
     #p_prob, q_prob = [a/np.sum(p_prob) for a in p_prob], [a/np.sum(q_prob) for a in q_prob]
     p = p / np.sum(p)
     q = q / np.sum(q)
+    print(f"p sum: {np.sum(p)}, q sum: {np.sum(q)}")
     
     
     #print(f"p_prob, q prob: {p_prob}, {q_prob}")
@@ -64,9 +67,12 @@ def hellinger_distance(p,q):
     #final_result = 0.0   
     #for i in range(len(p_prob)):
     diff = ((p)**(0.5) - (q)**(0.5))**2
+    print(f"sum diff: {np.sum(diff)}")
     diff = np.sum(diff)
     diff = diff**(0.5)
+    print(f"diff: {diff}")
     diff = (1/(2**(0.5))) * diff
+    print(f"diff: {diff}")
     
     final_result = diff
    
@@ -93,7 +99,7 @@ model_weights_h1_0e6_path = f"NQS-Bench-101\\training_logs\\{timestamp}\\model_w
 csv_file_path = f'NQS-Bench-101\\training_logs\\{timestamp}\\evaluation_metrics\\metrics.csv'
 
 '''
-r2 = round(r2_score(y_pred_h0_5, y_true_h0_5),4)
+r2 = round(10⁻⁶(y_pred_h0_5, y_true_h0_5),4)
 mse = round(mean_squared_error(y_true_h0_5, y_pred_h0_5),4)
 mae = round(mean_absolute_error(y_true_h0_5, y_pred_h0_5),4)    
 var = round(np.var(y_pred_h0_5),4)
@@ -174,16 +180,17 @@ metrics_data = {
 
 
 #print(f"Train loss length: {train_losses}")
+all_values = []
 df_metrics_all = pd.DataFrame()
 
 f1 = plt.figure(edgecolor='black')
 f2 = plt.figure()
-ax1 = f1.add_subplot(111)
-ax2 = f2.add_subplot(111)
+ax1 = f1.add_subplot(1,1,1)
+ax2 = f2.add_subplot(1,1,1)
 ax1.set_xlabel(r"True $\log\psi_\omega(\vec{\sigma})$")
 ax1.set_ylabel(r"Predicted $\log\psi_\omega(\vec{\sigma})$")
 
-f1.set_edgecolor("black")
+#f1.set_edgecolor("black")
 
 
 ax1.grid(True)
@@ -198,9 +205,9 @@ graph = go.Figure()
 graph2 = go.Figure()
 
 graph.update_layout(
-        xaxis_title=r"True $\log\psi_\omega(\vec{\sigma})$",
-        yaxis_title=r"Predicted $\log\psi_\omega(\vec{\sigma})$",
-        title=r"(NQS-Bench-101): True vs. Predicted $\log\psi_\omega(\vec{\sigma})$",
+        xaxis_title="True " + "logψ_ω(vec{σ})", 
+        yaxis_title="Predicted " + "logψ_ω(vec{σ})", 
+        title="(NQS-Bench-101): True vs. Predicted " + "logψ_ω(vec{σ})", 
         showlegend=True,
         legend_title_text="Legend"
     )
@@ -216,54 +223,105 @@ graph2.update_layout(
 
 
 
-if trained_regimes["h=1.0e-6"]:
+if trained_regimes["h=10⁻⁶"]:
     
-    avg_test_loss_h1_0e6 = test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)
-    avg_train_loss_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
-    avg_valid_loss_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
-    
+    avg_test_loss_h1_0e6, target_test_h1_0e6, pred_test_h1_0e6 = test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)
+    avg_train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
+    avg_valid_loss_h1_0e6, target_valid_h1_0e6, pred_valid_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
+    #perfect_prediction_x = [0,max(max(y_true_h1_0e6), max(y_pred_h1_0e6))]
     dict_optimizer_h1_0e6 = optimizer_h1_0e6.param_groups[0]
     dict_optimizer_h1_0e6.pop('params')
+    
+    total_params = sum(p.numel() for p in model_h1_0e6.parameters())
+    train_params = sum(p.numel() for p in model_h1_0e6.parameters() if p.requires_grad)
+    
+
     
     
     #ax1 = f1.add_axes(train_losses_h1_0e6)
     df_metrics_h1_0e6 = metrics_data.copy()
-    df_metrics_h1_0e6['regime'] = "h=1.0e-6"
-    df_metrics_h1_0e6['test_loss'] = avg_test_loss_h1_0e6
-    df_metrics_h1_0e6['train_loss'] = avg_train_loss_h1_0e6
-    df_metrics_h1_0e6['valid_loss'] = avg_valid_loss_h1_0e6
-    df_metrics_h1_0e6['model_summary'] = str(summary(model_h1_0e6, INPUT_SIZE))
+    df_metrics_h1_0e6['regime'] = "h=10⁻⁶"
+    df_metrics_h1_0e6['test_loss'] = round(avg_test_loss_h1_0e6,DECIMAL_PLACES_METRICS)
+    df_metrics_h1_0e6['train_loss'] = round(avg_train_loss_h1_0e6,DECIMAL_PLACES_METRICS)
+    if avg_valid_loss_h1_0e6==np.nan or len(target_valid_h1_0e6)==0 or len(pred_valid_h1_0e6)==0:
+        df_metrics_h1_0e6['valid_loss'] = 'NaN'
+        df_metrics_h1_0e6['R2_valid'] = 'NaN'
+        df_metrics_h1_0e6["MSE_valid"] = 'NaN'
+        df_metrics_h1_0e6["MAE_valid"] = 'NaN'
+        df_metrics_h1_0e6["hellinger_dist_valid"] = 'NaN'
+    else:
+        df_metrics_h1_0e6['valid_loss'] = round(avg_valid_loss_h1_0e6,DECIMAL_PLACES_METRICS) 
+        df_metrics_h1_0e6['R2_valid'] = round(r2_score(target_valid_h1_0e6, pred_valid_h1_0e6),DECIMAL_PLACES_METRICS)
+        df_metrics_h1_0e6["MSE_valid"] = round(mean_squared_error(target_valid_h1_0e6, pred_valid_h1_0e6),DECIMAL_PLACES_METRICS)
+        df_metrics_h1_0e6["MAE_valid"] = round(mean_absolute_error(target_valid_h1_0e6, pred_valid_h1_0e6),DECIMAL_PLACES_METRICS)
+        df_metrics_h1_0e6["hellinger_dist_valid"] = np.round(hellinger_distance(target_valid_h1_0e6, pred_valid_h1_0e6),decimals=DECIMAL_PLACES_METRICS)
+    #df_metrics_h1_0e6['model_summary'] = str(summary(model_h1_0e6, INPUT_SIZE))
+    df_metrics_h1_0e6['total_params'] = total_params
+    df_metrics_h1_0e6['train_params'] = train_params
+    df_metrics_h1_0e6['non_train_params'] = total_params - train_params
     df_metrics_h1_0e6['optimizer_name'] = optimizer_h1_0e6.__class__.__name__
     df_metrics_h1_0e6['optimizer_params'] = str(dict_optimizer_h1_0e6)
-    df_metrics_h1_0e6['R2'] = round(r2_score(y_pred_h1_0e6, y_true_h1_0e6),DECIMAL_PLACES_METRICS)
-    df_metrics_h1_0e6["MSE"] = round(mean_squared_error(y_true_h1_0e6, y_pred_h1_0e6),DECIMAL_PLACES_METRICS)
-    df_metrics_h1_0e6["MAE"] = round(mean_absolute_error(y_true_h1_0e6, y_pred_h1_0e6),DECIMAL_PLACES_METRICS)
-    df_metrics_h1_0e6["RMSE"] = round(root_mean_squared_error(y_true_h1_0e6, y_pred_h1_0e6),DECIMAL_PLACES_METRICS)
-    df_metrics_h1_0e6["MAPE"] = round(mean_absolute_percentage_error(y_true_h1_0e6, y_pred_h1_0e6),DECIMAL_PLACES_METRICS)
-    df_metrics_h1_0e6["sMAPE"] = round(smape(y_true_h1_0e6, y_pred_h1_0e6),DECIMAL_PLACES_METRICS)
-    #df_metrics_h1_0e6["RMSLE"] = round(root_mean_squared_log_error(y_true_h1_0e6, y_pred_h1_0e6),DECIMAL_PLACES_METRICS)
-    #df_metrics_h1_0e6["MSLE"] = round(mean_squared_log_error(y_true_h1_0e6, y_pred_h1_0e6),DECIMAL_PLACES_METRICS)
-    df_metrics_h1_0e6["hellinger_dist"] = round(hellinger_distance(y_true_h1_0e6, y_pred_h1_0e6),DECIMAL_PLACES_METRICS)
     
-    #metrics_h1_0e6 = metrics_data
+    df_metrics_h1_0e6['R2_test'] = round(r2_score(target_test_h1_0e6, pred_test_h1_0e6),DECIMAL_PLACES_METRICS)
+    df_metrics_h1_0e6['R2_train'] = round(r2_score(target_train_h1_0e6, pred_train_h1_0e6),DECIMAL_PLACES_METRICS) 
     
-    ax2.plot(train_losses_h1_0e6, label=r"Train loss ($h = 10^{-6}$)")
-    ax2.plot(valid_losses_h1_0e6, label=r"Valid loss ($h = 10^{-6}$)")
-    ax1.plot(y_true_h1_0e6, y_pred_h1_0e6, 's', markersize=1, label=r"$h = 10^{-6}$", alpha=0.5)
-    
-    
-    
-    graph.add_trace(go.Scatter(x=y_true_h1_0e6, y=y_pred_h1_0e6, mode='markers', name=r"$h = 10^{-6}$", opacity=0.5))
+    df_metrics_h1_0e6["MSE_test"] = round(mean_squared_error(target_test_h1_0e6, pred_test_h1_0e6),DECIMAL_PLACES_METRICS)
+    df_metrics_h1_0e6["MSE_train"] = round(mean_squared_error(target_train_h1_0e6, pred_train_h1_0e6),DECIMAL_PLACES_METRICS)
     
 
-    graph2.add_trace(go.Scatter(x=[e for e in range(1,EPOCHS+1,1)], y=valid_losses_h1_0e6, mode='lines', name=r"Valid loss ($h = 10^{-6}$)"))
-    graph2.add_trace(go.Scatter(x=[e for e in range(1,EPOCHS+1,1)], y=train_losses_h1_0e6, mode='lines', name=r"Train loss ($h = 10^{-6}$)"))
+    df_metrics_h1_0e6["MAE_test"] = round(mean_absolute_error(target_test_h1_0e6, pred_test_h1_0e6),DECIMAL_PLACES_METRICS)
+    df_metrics_h1_0e6["MAE_train"] = round(mean_absolute_error(target_train_h1_0e6, pred_train_h1_0e6),DECIMAL_PLACES_METRICS)
+
     
-    #graph2.show()
-    #graph2.write_html(save_path_loss_curve_html)
+    df_metrics_h1_0e6["hellinger_dist_test"] = np.round(hellinger_distance(target_test_h1_0e6, pred_test_h1_0e6),decimals=DECIMAL_PLACES_METRICS)
+    df_metrics_h1_0e6["hellinger_dist_train"] = np.round(hellinger_distance(target_train_h1_0e6, pred_train_h1_0e6),decimals=DECIMAL_PLACES_METRICS)
+        
+    
+    #df_metrics_h1_0e6["RMSE"] = round(root_mean_squared_error(y_true_h1_0e6, y_pred_h1_0e6),DECIMAL_PLACES_METRICS)
+    #df_metrics_h1_0e6["MAPE"] = round(mean_absolute_percentage_error(y_true_h1_0e6, y_pred_h1_0e6),DECIMAL_PLACES_METRICS)
+    #df_metrics_h1_0e6["sMAPE"] = round(smape(y_true_h1_0e6, y_pred_h1_0e6),DECIMAL_PLACES_METRICS)
+    
+    #df_metrics_h1_0e6["RMSLE"] = round(root_mean_squared_log_error(y_true_h1_0e6, y_pred_h1_0e6),DECIMAL_PLACES_METRICS)
+    #df_metrics_h1_0e6["MSLE"] = round(mean_squared_log_error(y_true_h1_0e6, y_pred_h1_0e6),DECIMAL_PLACES_METRICS)
+    
+    #df_metrics_h1_0e6["hellinger_dist"] = round(hellinger_distance(y_true_h1_0e6, y_pred_h1_0e6),DECIMAL_PLACES_METRICS)
+    '''
+    var = round(np.var(y_pred_h1_0e6),4)
+    rmse = round(root_mean_squared_error(y_true_h1_0e6, y_pred_h1_0e6),4)
+
+    mape = round(mean_absolute_percentage_error(y_true_h1_0e6, y_pred_h1_0e6),4)
+    smape = round(smape(y_true_h1_0e6, y_pred_h1_0e6),4)
+    rmse = round(root_mean_squared_error(y_true_h1_0e6, y_pred_h1_0e6),4)
+    rmsle = round(root_mean_squared_log_error(y_true_h1_0e6, y_pred_h1_0e6),4)
+    msle = round(mean_squared_log_error(y_true_h1_0e6, y_pred_h1_0e6),4)
+    hell_dist = hellinger_distance(y_pred_h1_0e6, y_true_h1_0e6)
+        
+    '''
+    plot_metrics = "\n"+r"$R^2$"+f"={round(r2_score(target_test_h1_0e6, pred_test_h1_0e6),DECIMAL_PLACES_METRICS)}, MSE={round(mean_squared_error(target_test_h1_0e6, pred_test_h1_0e6),DECIMAL_PLACES_METRICS)}, MAE={round(mean_absolute_error(target_test_h1_0e6, pred_test_h1_0e6),DECIMAL_PLACES_METRICS)}"
+    plot_title = r"(NQS-Bench-101): True vs. Predicted $\log\psi_\omega(\vec{\sigma})$"
+    ax1.set_title(plot_title + plot_metrics)
+    ax2.plot(train_losses_h1_0e6, label=r"Train loss ($h=10^{-6}$)")
+    ax2.plot(valid_losses_h1_0e6, label=r"Valid loss ($h=10^{-6}$)")
+    ax1.plot(target_test_h1_0e6, pred_test_h1_0e6, 'o', markersize=5, label=r"$h=10^{-6}$", alpha=0.5, mec='black')
+    
+    #ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y = x (perfect prediction)", linewidth=0.5, color='cyan')
+    #graph = go.Figure()
+    graph.add_trace(go.Scatter(x=target_test_h1_0e6, y=pred_test_h1_0e6, mode='markers', name=r"$h=10^{-6}$", opacity=0.5))
+    
+    
+    #graph.show()
+    #graph.write_html(save_path_pred_true_html)
+    
+    #graph2 = go.Figure()
+    graph2.add_trace(go.Scatter(x=[e for e in range(1,EPOCHS+1,1)], y=valid_losses_h1_0e6, mode='lines', name=r"Valid loss ($h=10^{-6}$)"))
+    graph2.add_trace(go.Scatter(x=[e for e in range(1,EPOCHS+1,1)], y=train_losses_h1_0e6, mode='lines', name=r"Train loss ($h=10^{-6}$)"))
+    
+    
     torch.save(model_h1_0e6.state_dict(), model_weights_h1_0e6_path) if SAVING_WEIGHTS else None
-    
     df_metrics_all = pd.concat([df_metrics_all, pd.DataFrame([df_metrics_h1_0e6])], ignore_index=True)
+    
+    all_values.append(list(target_test_h1_0e6) + 
+        list(pred_test_h1_0e6))
     
 
 if trained_regimes["h=0.5"]:
@@ -285,7 +343,18 @@ if trained_regimes["h=0.5"]:
     df_metrics_h0_5['regime'] = "h=0.5"
     df_metrics_h0_5['test_loss'] = round(avg_test_loss_h0_5,DECIMAL_PLACES_METRICS)
     df_metrics_h0_5['train_loss'] = round(avg_train_loss_h0_5,DECIMAL_PLACES_METRICS)
-    df_metrics_h0_5['valid_loss'] = round(avg_valid_loss_h0_5,DECIMAL_PLACES_METRICS)
+    if avg_valid_loss_h0_5==np.nan or len(target_valid_h0_5)==0 or len(pred_valid_h0_5)==0:
+        df_metrics_h0_5['valid_loss'] = 'NaN'
+        df_metrics_h0_5['R2_valid'] = 'NaN'
+        df_metrics_h0_5["MSE_valid"] = 'NaN'
+        df_metrics_h0_5["MAE_valid"] = 'NaN'
+        df_metrics_h0_5["hellinger_dist_valid"] = 'NaN'
+    else:
+        df_metrics_h0_5['valid_loss'] = round(avg_valid_loss_h0_5,DECIMAL_PLACES_METRICS) 
+        df_metrics_h0_5['R2_valid'] = round(r2_score(target_valid_h0_5, pred_valid_h0_5),DECIMAL_PLACES_METRICS)
+        df_metrics_h0_5["MSE_valid"] = round(mean_squared_error(target_valid_h0_5, pred_valid_h0_5),DECIMAL_PLACES_METRICS)
+        df_metrics_h0_5["MAE_valid"] = round(mean_absolute_error(target_valid_h0_5, pred_valid_h0_5),DECIMAL_PLACES_METRICS)
+        df_metrics_h0_5["hellinger_dist_valid"] = np.round(hellinger_distance(target_valid_h0_5, pred_valid_h0_5),decimals=DECIMAL_PLACES_METRICS)
     #df_metrics_h0_5['model_summary'] = str(summary(model_h0_5, INPUT_SIZE))
     df_metrics_h0_5['total_params'] = total_params
     df_metrics_h0_5['train_params'] = train_params
@@ -293,21 +362,20 @@ if trained_regimes["h=0.5"]:
     df_metrics_h0_5['optimizer_name'] = optimizer_h0_5.__class__.__name__
     df_metrics_h0_5['optimizer_params'] = str(dict_optimizer_h0_5)
     
-    df_metrics_h0_5['R2_test'] = round(r2_score(pred_test_h0_5, target_test_h0_5),DECIMAL_PLACES_METRICS)
-    df_metrics_h0_5['R2_train'] = round(r2_score(pred_train_h0_5, target_train_h0_5),DECIMAL_PLACES_METRICS)
-    df_metrics_h0_5['R2_valid'] = round(r2_score(pred_valid_h0_5, target_valid_h0_5),DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5['R2_test'] = round(r2_score(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5['R2_train'] = round(r2_score(target_train_h0_5, pred_train_h0_5),DECIMAL_PLACES_METRICS) 
     
-    df_metrics_h0_5["MSE_test"] = round(mean_squared_error(pred_test_h0_5, target_test_h0_5),DECIMAL_PLACES_METRICS)
-    df_metrics_h0_5["MSE_train"] = round(mean_squared_error(pred_train_h0_5, target_train_h0_5),DECIMAL_PLACES_METRICS)
-    df_metrics_h0_5["MSE_valid"] = round(mean_squared_error(pred_valid_h0_5, target_valid_h0_5),DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5["MSE_test"] = round(mean_squared_error(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5["MSE_train"] = round(mean_squared_error(target_train_h0_5, pred_train_h0_5),DECIMAL_PLACES_METRICS)
     
-    df_metrics_h0_5["MAE_test"] = round(mean_absolute_error(pred_test_h0_5, target_test_h0_5),DECIMAL_PLACES_METRICS)
-    df_metrics_h0_5["MAE_train"] = round(mean_absolute_error(pred_train_h0_5, target_train_h0_5),DECIMAL_PLACES_METRICS)
-    df_metrics_h0_5["MAE_valid"] = round(mean_absolute_error(pred_valid_h0_5, target_valid_h0_5),DECIMAL_PLACES_METRICS)
+
+    df_metrics_h0_5["MAE_test"] = round(mean_absolute_error(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5["MAE_train"] = round(mean_absolute_error(target_train_h0_5, pred_train_h0_5),DECIMAL_PLACES_METRICS)
+
     
-    df_metrics_h0_5["hellinger_dist_test"] = np.round(hellinger_distance(pred_test_h0_5, target_test_h0_5),decimals=DECIMAL_PLACES_METRICS)
-    df_metrics_h0_5["hellinger_dist_train"] = hellinger_distance(pred_train_h0_5, target_train_h0_5)
-    df_metrics_h0_5["hellinger_dist_valid"] = np.round(hellinger_distance(pred_valid_h0_5, target_valid_h0_5),decimals=DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5["hellinger_dist_test"] = np.round(hellinger_distance(target_test_h0_5, pred_test_h0_5),decimals=DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5["hellinger_dist_train"] = np.round(hellinger_distance(target_train_h0_5, pred_train_h0_5),decimals=DECIMAL_PLACES_METRICS)
+        
     
     #df_metrics_h0_5["RMSE"] = round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
     #df_metrics_h0_5["MAPE"] = round(mean_absolute_percentage_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
@@ -329,12 +397,12 @@ if trained_regimes["h=0.5"]:
     hell_dist = hellinger_distance(y_pred_h0_5, y_true_h0_5)
         
     '''
-    plot_metrics = "\n"+r"$R^2$"+f"={round(r2_score(pred_test_h0_5, target_test_h0_5),DECIMAL_PLACES_METRICS)}, MSE={round(mean_squared_error(pred_test_h0_5, target_test_h0_5),DECIMAL_PLACES_METRICS)}, MAE={round(mean_absolute_error(pred_test_h0_5, target_test_h0_5),DECIMAL_PLACES_METRICS)}"
+    plot_metrics = "\n"+r"$R^2$"+f"={round(r2_score(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}, MSE={round(mean_squared_error(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}, MAE={round(mean_absolute_error(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}"
     plot_title = r"(NQS-Bench-101): True vs. Predicted $\log\psi_\omega(\vec{\sigma})$"
     ax1.set_title(plot_title + plot_metrics)
     ax2.plot(train_losses_h0_5, label="Train loss (h=0.5)")
     ax2.plot(valid_losses_h0_5, label="Valid loss (h=0.5)")
-    ax1.plot(target_test_h0_5, pred_test_h0_5, 'o', markersize=5, label="h=0.5", alpha=0.5, mec='black', c = "#5e98ff")
+    ax1.plot(target_test_h0_5, pred_test_h0_5, 'o', markersize=5, label="h=0.5", alpha=0.5, mec='black')
     
     #ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y = x (perfect prediction)", linewidth=0.5, color='cyan')
     #graph = go.Figure()
@@ -352,6 +420,9 @@ if trained_regimes["h=0.5"]:
     torch.save(model_h0_5.state_dict(), model_weights_h0_5_path) if SAVING_WEIGHTS else None
     df_metrics_all = pd.concat([df_metrics_all, pd.DataFrame([df_metrics_h0_5])], ignore_index=True)
     
+    all_values.append(list(target_test_h0_5) + 
+        list(pred_test_h0_5))
+    
     
     
     
@@ -360,42 +431,89 @@ if trained_regimes["h=0.5"]:
     
     
 if trained_regimes["h=1.0"]:
-    avg_test_loss_h1_0 = test(test_dataloader_h1_0, model_h1_0, loss_fn)
-    avg_train_loss_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0)
-    avg_valid_loss_h1_0 = valid(valid_dataloader_h1_0, model_h1_0, loss_fn)
-    
+    avg_test_loss_h1_0, target_test_h1_0, pred_test_h1_0 = test(test_dataloader_h1_0, model_h1_0, loss_fn)
+    avg_train_loss_h1_0, target_train_h1_0, pred_train_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0)
+    avg_valid_loss_h1_0, target_valid_h1_0, pred_valid_h1_0 = valid(valid_dataloader_h1_0, model_h1_0, loss_fn)
+    #perfect_prediction_x = [0,max(max(y_true_h1_0), max(y_pred_h1_0))]
     dict_optimizer_h1_0 = optimizer_h1_0.param_groups[0]
     dict_optimizer_h1_0.pop('params')
+    
+    total_params = sum(p.numel() for p in model_h1_0.parameters())
+    train_params = sum(p.numel() for p in model_h1_0.parameters() if p.requires_grad)
+    
+
     
     
     #ax1 = f1.add_axes(train_losses_h1_0)
     df_metrics_h1_0 = metrics_data.copy()
     df_metrics_h1_0['regime'] = "h=1.0"
-    df_metrics_h1_0['test_loss'] = avg_test_loss_h1_0
-    df_metrics_h1_0['train_loss'] = avg_train_loss_h1_0
-    df_metrics_h1_0['valid_loss'] = avg_valid_loss_h1_0
-    df_metrics_h1_0['model_summary'] = str(summary(model_h1_0, INPUT_SIZE))
+    df_metrics_h1_0['test_loss'] = round(avg_test_loss_h1_0,DECIMAL_PLACES_METRICS)
+    df_metrics_h1_0['train_loss'] = round(avg_train_loss_h1_0,DECIMAL_PLACES_METRICS)
+    if avg_valid_loss_h1_0==np.nan or len(target_valid_h1_0)==0 or len(pred_valid_h1_0)==0:
+        df_metrics_h1_0['valid_loss'] = 'NaN'
+        df_metrics_h1_0['R2_valid'] = 'NaN'
+        df_metrics_h1_0["MSE_valid"] = 'NaN'
+        df_metrics_h1_0["MAE_valid"] = 'NaN'
+        df_metrics_h1_0["hellinger_dist_valid"] = 'NaN'
+    else:
+        df_metrics_h1_0['valid_loss'] = round(avg_valid_loss_h1_0,DECIMAL_PLACES_METRICS) 
+        df_metrics_h1_0['R2_valid'] = round(r2_score(target_valid_h1_0, pred_valid_h1_0),DECIMAL_PLACES_METRICS)
+        df_metrics_h1_0["MSE_valid"] = round(mean_squared_error(target_valid_h1_0, pred_valid_h1_0),DECIMAL_PLACES_METRICS)
+        df_metrics_h1_0["MAE_valid"] = round(mean_absolute_error(target_valid_h1_0, pred_valid_h1_0),DECIMAL_PLACES_METRICS)
+        df_metrics_h1_0["hellinger_dist_valid"] = np.round(hellinger_distance(target_valid_h1_0, pred_valid_h1_0),decimals=DECIMAL_PLACES_METRICS)
+    #df_metrics_h1_0['model_summary'] = str(summary(model_h1_0, INPUT_SIZE))
+    df_metrics_h1_0['total_params'] = total_params
+    df_metrics_h1_0['train_params'] = train_params
+    df_metrics_h1_0['non_train_params'] = total_params - train_params
     df_metrics_h1_0['optimizer_name'] = optimizer_h1_0.__class__.__name__
     df_metrics_h1_0['optimizer_params'] = str(dict_optimizer_h1_0)
-    df_metrics_h1_0['R2'] = round(r2_score(y_pred_h1_0, y_true_h1_0),DECIMAL_PLACES_METRICS)
-    df_metrics_h1_0["MSE"] = round(mean_squared_error(y_true_h1_0, y_pred_h1_0),DECIMAL_PLACES_METRICS)
-    df_metrics_h1_0["MAE"] = round(mean_absolute_error(y_true_h1_0, y_pred_h1_0),DECIMAL_PLACES_METRICS)
-    df_metrics_h1_0["RMSE"] = round(root_mean_squared_error(y_true_h1_0, y_pred_h1_0),DECIMAL_PLACES_METRICS)
-    df_metrics_h1_0["MAPE"] = round(mean_absolute_percentage_error(y_true_h1_0, y_pred_h1_0),DECIMAL_PLACES_METRICS)
-    df_metrics_h1_0["sMAPE"] = round(smape(y_true_h1_0, y_pred_h1_0),DECIMAL_PLACES_METRICS)
+    
+    df_metrics_h1_0['R2_test'] = round(r2_score(target_test_h1_0, pred_test_h1_0),DECIMAL_PLACES_METRICS)
+    df_metrics_h1_0['R2_train'] = round(r2_score(target_train_h1_0, pred_train_h1_0),DECIMAL_PLACES_METRICS) 
+    
+    df_metrics_h1_0["MSE_test"] = round(mean_squared_error(target_test_h1_0, pred_test_h1_0),DECIMAL_PLACES_METRICS)
+    df_metrics_h1_0["MSE_train"] = round(mean_squared_error(target_train_h1_0, pred_train_h1_0),DECIMAL_PLACES_METRICS)
+    
+
+    df_metrics_h1_0["MAE_test"] = round(mean_absolute_error(target_test_h1_0, pred_test_h1_0),DECIMAL_PLACES_METRICS)
+    df_metrics_h1_0["MAE_train"] = round(mean_absolute_error(target_train_h1_0, pred_train_h1_0),DECIMAL_PLACES_METRICS)
+
+    
+    df_metrics_h1_0["hellinger_dist_test"] = np.round(hellinger_distance(target_test_h1_0, pred_test_h1_0),decimals=DECIMAL_PLACES_METRICS)
+    df_metrics_h1_0["hellinger_dist_train"] = np.round(hellinger_distance(target_train_h1_0, pred_train_h1_0),decimals=DECIMAL_PLACES_METRICS)
+        
+    
+    #df_metrics_h1_0["RMSE"] = round(root_mean_squared_error(y_true_h1_0, y_pred_h1_0),DECIMAL_PLACES_METRICS)
+    #df_metrics_h1_0["MAPE"] = round(mean_absolute_percentage_error(y_true_h1_0, y_pred_h1_0),DECIMAL_PLACES_METRICS)
+    #df_metrics_h1_0["sMAPE"] = round(smape(y_true_h1_0, y_pred_h1_0),DECIMAL_PLACES_METRICS)
+    
     #df_metrics_h1_0["RMSLE"] = round(root_mean_squared_log_error(y_true_h1_0, y_pred_h1_0),DECIMAL_PLACES_METRICS)
     #df_metrics_h1_0["MSLE"] = round(mean_squared_log_error(y_true_h1_0, y_pred_h1_0),DECIMAL_PLACES_METRICS)
-    df_metrics_h1_0["hellinger_dist"] = round(hellinger_distance(y_true_h1_0, y_pred_h1_0),DECIMAL_PLACES_METRICS)
-    #perfect_prediction_x = [0,max(max(y_true_h1_0), max(y_pred_h1_0))]
-    ax2.plot(train_losses_h1_0, label="Train Loss (h=1.0)")
-    ax2.plot(valid_losses_h1_0, label="Valid Loss (h=1.0)")
-    ax1.plot(y_true_h1_0, y_pred_h1_0, 's', markersize=1, label="h=1.0", alpha=0.5)
     
+    #df_metrics_h1_0["hellinger_dist"] = round(hellinger_distance(y_true_h1_0, y_pred_h1_0),DECIMAL_PLACES_METRICS)
+    '''
+    var = round(np.var(y_pred_h1_0),4)
+    rmse = round(root_mean_squared_error(y_true_h1_0, y_pred_h1_0),4)
+
+    mape = round(mean_absolute_percentage_error(y_true_h1_0, y_pred_h1_0),4)
+    smape = round(smape(y_true_h1_0, y_pred_h1_0),4)
+    rmse = round(root_mean_squared_error(y_true_h1_0, y_pred_h1_0),4)
+    rmsle = round(root_mean_squared_log_error(y_true_h1_0, y_pred_h1_0),4)
+    msle = round(mean_squared_log_error(y_true_h1_0, y_pred_h1_0),4)
+    hell_dist = hellinger_distance(y_pred_h1_0, y_true_h1_0)
+        
+    '''
+    plot_metrics = "\n"+r"$R^2$"+f"={round(r2_score(target_test_h1_0, pred_test_h1_0),DECIMAL_PLACES_METRICS)}, MSE={round(mean_squared_error(target_test_h1_0, pred_test_h1_0),DECIMAL_PLACES_METRICS)}, MAE={round(mean_absolute_error(target_test_h1_0, pred_test_h1_0),DECIMAL_PLACES_METRICS)}"
+    plot_title = r"(NQS-Bench-101): True vs. Predicted $\log\psi_\omega(\vec{\sigma})$"
+    ax1.set_title(plot_title + plot_metrics)
+    ax2.plot(train_losses_h1_0, label="Train loss (h=1.0)")
+    ax2.plot(valid_losses_h1_0, label="Valid loss (h=1.0)")
+    ax1.plot(target_test_h1_0, pred_test_h1_0, 'o', markersize=5, label="h=1.0", alpha=0.5, mec='black')
     
     #ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y = x (perfect prediction)", linewidth=0.5, color='cyan')
     #graph = go.Figure()
-    graph.add_trace(go.Scatter(x=y_true_h1_0, y=y_pred_h1_0, mode='markers', name="h=1.0", opacity=0.5))
-    #graph.add_trace(go.Scatter(x=perfect_prediction_x, y=perfect_prediction_x, mode='lines', name="y = x (perfect prediction)", marker=dict(color='cyan')))
+    graph.add_trace(go.Scatter(x=target_test_h1_0, y=pred_test_h1_0, mode='markers', name="h=1.0", opacity=0.5))
+    
     
     #graph.show()
     #graph.write_html(save_path_pred_true_html)
@@ -406,16 +524,23 @@ if trained_regimes["h=1.0"]:
     
     
     torch.save(model_h1_0.state_dict(), model_weights_h1_0_path) if SAVING_WEIGHTS else None
-    
     df_metrics_all = pd.concat([df_metrics_all, pd.DataFrame([df_metrics_h1_0])], ignore_index=True)
     
-if trained_regimes["h=2.0"]:
-    avg_test_loss_h2_0 = test(test_dataloader_h2_0, model_h2_0, loss_fn)
-    avg_train_loss_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0)
-    avg_valid_loss_h2_0 = valid(valid_dataloader_h2_0, model_h2_0, loss_fn)
+    all_values.append(list(target_test_h1_0) + 
+        list(pred_test_h1_0))
     
+if trained_regimes["h=2.0"]:
+    avg_test_loss_h2_0, target_test_h2_0, pred_test_h2_0 = test(test_dataloader_h2_0, model_h2_0, loss_fn)
+    avg_train_loss_h2_0, target_train_h2_0, pred_train_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0)
+    avg_valid_loss_h2_0, target_valid_h2_0, pred_valid_h2_0 = valid(valid_dataloader_h2_0, model_h2_0, loss_fn)
+    #perfect_prediction_x = [0,max(max(y_true_h2_0), max(y_pred_h2_0))]
     dict_optimizer_h2_0 = optimizer_h2_0.param_groups[0]
     dict_optimizer_h2_0.pop('params')
+    
+    total_params = sum(p.numel() for p in model_h2_0.parameters())
+    train_params = sum(p.numel() for p in model_h2_0.parameters() if p.requires_grad)
+    
+
     
     
     #ax1 = f1.add_axes(train_losses_h2_0)
@@ -423,26 +548,71 @@ if trained_regimes["h=2.0"]:
     df_metrics_h2_0['regime'] = "h=2.0"
     df_metrics_h2_0['test_loss'] = round(avg_test_loss_h2_0,DECIMAL_PLACES_METRICS)
     df_metrics_h2_0['train_loss'] = round(avg_train_loss_h2_0,DECIMAL_PLACES_METRICS)
-    df_metrics_h2_0['valid_loss'] = round(avg_valid_loss_h2_0,DECIMAL_PLACES_METRICS)
-    df_metrics_h2_0['model_summary'] = str(summary(model_h2_0, INPUT_SIZE))
+    if avg_valid_loss_h2_0==np.nan or len(target_valid_h2_0)==0 or len(pred_valid_h2_0)==0:
+        df_metrics_h2_0['valid_loss'] = 'NaN'
+        df_metrics_h2_0['R2_valid'] = 'NaN'
+        df_metrics_h2_0["MSE_valid"] = 'NaN'
+        df_metrics_h2_0["MAE_valid"] = 'NaN'
+        df_metrics_h2_0["hellinger_dist_valid"] = 'NaN'
+    else:
+        df_metrics_h2_0['valid_loss'] = round(avg_valid_loss_h2_0,DECIMAL_PLACES_METRICS) 
+        df_metrics_h2_0['R2_valid'] = round(r2_score(target_valid_h2_0, pred_valid_h2_0),DECIMAL_PLACES_METRICS)
+        df_metrics_h2_0["MSE_valid"] = round(mean_squared_error(target_valid_h2_0, pred_valid_h2_0),DECIMAL_PLACES_METRICS)
+        df_metrics_h2_0["MAE_valid"] = round(mean_absolute_error(target_valid_h2_0, pred_valid_h2_0),DECIMAL_PLACES_METRICS)
+        df_metrics_h2_0["hellinger_dist_valid"] = np.round(hellinger_distance(target_valid_h2_0, pred_valid_h2_0),decimals=DECIMAL_PLACES_METRICS)
+    #df_metrics_h2_0['model_summary'] = str(summary(model_h2_0, INPUT_SIZE))
+    df_metrics_h2_0['total_params'] = total_params
+    df_metrics_h2_0['train_params'] = train_params
+    df_metrics_h2_0['non_train_params'] = total_params - train_params
     df_metrics_h2_0['optimizer_name'] = optimizer_h2_0.__class__.__name__
     df_metrics_h2_0['optimizer_params'] = str(dict_optimizer_h2_0)
-    df_metrics_h2_0['R2'] = round(r2_score(y_pred_h2_0, y_true_h2_0),DECIMAL_PLACES_METRICS)
-    df_metrics_h2_0["MSE"] = round(mean_squared_error(y_true_h2_0, y_pred_h2_0),DECIMAL_PLACES_METRICS)
-    df_metrics_h2_0["MAE"] = round(mean_absolute_error(y_true_h2_0, y_pred_h2_0),DECIMAL_PLACES_METRICS)
-    df_metrics_h2_0["RMSE"] = round(root_mean_squared_error(y_true_h2_0, y_pred_h2_0),DECIMAL_PLACES_METRICS)
-    df_metrics_h2_0["MAPE"] = round(mean_absolute_percentage_error(y_true_h2_0, y_pred_h2_0),DECIMAL_PLACES_METRICS)
-    df_metrics_h2_0["sMAPE"] = round(smape(y_true_h2_0, y_pred_h2_0),DECIMAL_PLACES_METRICS)
+    
+    df_metrics_h2_0['R2_test'] = round(r2_score(target_test_h2_0, pred_test_h2_0),DECIMAL_PLACES_METRICS)
+    df_metrics_h2_0['R2_train'] = round(r2_score(target_train_h2_0, pred_train_h2_0),DECIMAL_PLACES_METRICS) 
+    
+    df_metrics_h2_0["MSE_test"] = round(mean_squared_error(target_test_h2_0, pred_test_h2_0),DECIMAL_PLACES_METRICS)
+    df_metrics_h2_0["MSE_train"] = round(mean_squared_error(target_train_h2_0, pred_train_h2_0),DECIMAL_PLACES_METRICS)
+    
+
+    df_metrics_h2_0["MAE_test"] = round(mean_absolute_error(target_test_h2_0, pred_test_h2_0),DECIMAL_PLACES_METRICS)
+    df_metrics_h2_0["MAE_train"] = round(mean_absolute_error(target_train_h2_0, pred_train_h2_0),DECIMAL_PLACES_METRICS)
+
+    
+    df_metrics_h2_0["hellinger_dist_test"] = np.round(hellinger_distance(target_test_h2_0, pred_test_h2_0),decimals=DECIMAL_PLACES_METRICS)
+    df_metrics_h2_0["hellinger_dist_train"] = np.round(hellinger_distance(target_train_h2_0, pred_train_h2_0),decimals=DECIMAL_PLACES_METRICS)
+        
+    
+    #df_metrics_h2_0["RMSE"] = round(root_mean_squared_error(y_true_h2_0, y_pred_h2_0),DECIMAL_PLACES_METRICS)
+    #df_metrics_h2_0["MAPE"] = round(mean_absolute_percentage_error(y_true_h2_0, y_pred_h2_0),DECIMAL_PLACES_METRICS)
+    #df_metrics_h2_0["sMAPE"] = round(smape(y_true_h2_0, y_pred_h2_0),DECIMAL_PLACES_METRICS)
+    
     #df_metrics_h2_0["RMSLE"] = round(root_mean_squared_log_error(y_true_h2_0, y_pred_h2_0),DECIMAL_PLACES_METRICS)
     #df_metrics_h2_0["MSLE"] = round(mean_squared_log_error(y_true_h2_0, y_pred_h2_0),DECIMAL_PLACES_METRICS)
-    df_metrics_h2_0["hellinger_dist"] = round(hellinger_distance(y_true_h2_0, y_pred_h2_0),DECIMAL_PLACES_METRICS)
-    #perfect_prediction_x = [0,max(max(y_true_h2_0), max(y_pred_h2_0))]
-    ax2.plot(train_losses_h2_0, label="Train Loss (h=2.0)")
-    ax2.plot(valid_losses_h2_0, label="Valid Loss (h=2.0)")
-    ax1.plot(y_true_h2_0, y_pred_h2_0, 's', markersize=1, label="h=2.0", alpha=0.5)
     
-    graph.add_trace(go.Scatter(x=y_true_h2_0, y=y_pred_h2_0, mode='markers', name="h=2.0", opacity=0.5))
-    #graph.add_trace(go.Scatter(x=perfect_prediction_x, y=perfect_prediction_x, mode='lines', name="y = x (perfect prediction)", marker=dict(color='cyan')))
+    #df_metrics_h2_0["hellinger_dist"] = round(hellinger_distance(y_true_h2_0, y_pred_h2_0),DECIMAL_PLACES_METRICS)
+    '''
+    var = round(np.var(y_pred_h2_0),4)
+    rmse = round(root_mean_squared_error(y_true_h2_0, y_pred_h2_0),4)
+
+    mape = round(mean_absolute_percentage_error(y_true_h2_0, y_pred_h2_0),4)
+    smape = round(smape(y_true_h2_0, y_pred_h2_0),4)
+    rmse = round(root_mean_squared_error(y_true_h2_0, y_pred_h2_0),4)
+    rmsle = round(root_mean_squared_log_error(y_true_h2_0, y_pred_h2_0),4)
+    msle = round(mean_squared_log_error(y_true_h2_0, y_pred_h2_0),4)
+    hell_dist = hellinger_distance(y_pred_h2_0, y_true_h2_0)
+        
+    '''
+    plot_metrics = "\n"+r"$R^2$"+f"={round(r2_score(target_test_h2_0, pred_test_h2_0),DECIMAL_PLACES_METRICS)}, MSE={round(mean_squared_error(target_test_h2_0, pred_test_h2_0),DECIMAL_PLACES_METRICS)}, MAE={round(mean_absolute_error(target_test_h2_0, pred_test_h2_0),DECIMAL_PLACES_METRICS)}"
+    plot_title = r"(NQS-Bench-101): True vs. Predicted $\log\psi_\omega(\vec{\sigma})$"
+    ax1.set_title(plot_title + plot_metrics)
+    ax2.plot(train_losses_h2_0, label="Train loss (h=2.0)")
+    ax2.plot(valid_losses_h2_0, label="Valid loss (h=2.0)")
+    ax1.plot(target_test_h2_0, pred_test_h2_0, 'o', markersize=5, label="h=2.0", alpha=0.5, mec='black')
+    
+    #ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y = x (perfect prediction)", linewidth=0.5, color='cyan')
+    #graph = go.Figure()
+    graph.add_trace(go.Scatter(x=target_test_h2_0, y=pred_test_h2_0, mode='markers', name="h=2.0", opacity=0.5))
+    
     
     #graph.show()
     #graph.write_html(save_path_pred_true_html)
@@ -453,24 +623,18 @@ if trained_regimes["h=2.0"]:
     
     
     torch.save(model_h2_0.state_dict(), model_weights_h2_0_path) if SAVING_WEIGHTS else None
-    
     df_metrics_all = pd.concat([df_metrics_all, pd.DataFrame([df_metrics_h2_0])], ignore_index=True)
     
-all_values = (
-    list(y_true_h0_5) +
-    list(y_pred_h0_5) +
-    list(y_true_h1_0) +
-    list(y_pred_h1_0) +
-    list(y_true_h2_0) +
-    list(y_pred_h2_0) +
-    list(y_true_h1_0e6) +
-    list(y_pred_h1_0e6)
-)
+    all_values.append(list(target_test_h2_0) + 
+        list(pred_test_h2_0))
+    
 
-min_val = min(all_values, default=math.inf)
-max_val = max(all_values, default=-math.inf)
+all_values = list(itertools.chain.from_iterable(all_values))
+min_val = min(all_values)
+max_val = max(all_values)
 
 perfect_prediction_x = [min_val, max_val]
+print(f"Perferct prediction x: {perfect_prediction_x}")
 ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y=x (perfect prediction)", linewidth=0.7, color='cyan', alpha=0.3)
 graph.add_trace(go.Scatter(x=[min_val, max_val], y=[min_val, max_val], mode='lines', name="y=x (perfect prediction)", opacity=0.3, marker=dict(color='cyan')))
     
