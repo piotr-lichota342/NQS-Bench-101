@@ -81,10 +81,12 @@ def hellinger_distance(p,q):
     return final_result
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
 os.makedirs(os.path.join('NQS-Bench-101\\training_logs', f"{timestamp}"))
 os.makedirs(os.path.join(f'NQS-Bench-101\\training_logs\\{timestamp}', "curves"))
 os.makedirs(os.path.join(f'NQS-Bench-101\\training_logs\\{timestamp}', "evaluation_metrics"))
 os.makedirs(os.path.join(f'NQS-Bench-101\\training_logs\\{timestamp}', "model_weights"))
+
 save_path_loss_curve = f"NQS-Bench-101\\training_logs\\{timestamp}\\curves\\loss_curve.png"
 save_path_pred_true = f"NQS-Bench-101\\training_logs\\{timestamp}\\curves\\pred_true_curve.png"
 

@@ -12,6 +12,7 @@ from sklearn.metrics import r2_score, mean_squared_error, root_mean_squared_erro
 import numpy as np
 from keras import backend as K
 import sklearn
+from tqdm import tqdm
 #import astropy
 
 from dataset_loading import train_dataloader_h0_5, train_dataloader_h1_0, train_dataloader_h2_0, train_dataloader_h1_0e6
@@ -108,30 +109,31 @@ train_losses_h1_0e6, valid_losses_h1_0e6 = [], []
 
 start_training_time = time.time()
 
+
 for t in range(EPOCHS):
     print(f"Epoch {t+1}/{EPOCHS}\n===============================")
     
-    if trained_regimes["h=0.5"]:
+    if int(trained_regimes[1]):
         print("Losses for h=0.5:\n")
         train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5)
         valid_loss_h0_5, target_valid_h0_5, pred_valid_h0_5 = valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
         train_losses_h0_5.append(train_loss_h0_5)
         valid_losses_h0_5.append(valid_loss_h0_5)
         
-    if trained_regimes["h=1.0"]:
+    if int(trained_regimes[2]):
         print("Losses for h=1.0:\n")
         train_loss_h1_0, target_train_h1_0, pred_train_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0)
         valid_loss_h1_0, target_valid_h1_0, pred_valid_h1_0 = valid(valid_dataloader_h1_0, model_h1_0, loss_fn)
         train_losses_h1_0.append(train_loss_h1_0)
         valid_losses_h1_0.append(valid_loss_h1_0)
         
-    if trained_regimes["h=2.0"]:
+    if int(trained_regimes[3]):
         print("Losses for h=2.0:\n")
         train_loss_h2_0, target_train_h2_0, pred_train_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0)
         valid_loss_h2_0, target_valid_h2_0, pred_valid_h2_0 = valid(valid_dataloader_h2_0, model_h2_0, loss_fn)
         train_losses_h2_0.append(train_loss_h2_0)
         valid_losses_h2_0.append(valid_loss_h2_0)
-    if trained_regimes["h=10⁻⁶"]:
+    if int(trained_regimes[0]):
         print("Losses for h=10⁻⁶\n")
         train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
         valid_loss_h1_0e6, target_valid_h1_0e6, pred_valid_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
@@ -150,7 +152,7 @@ y_pred_h1_0, y_true_h1_0 = [], []
 y_pred_h2_0, y_true_h2_0 = [], []
    
 
-if trained_regimes["h=0.5"]:
+if int(trained_regimes[1]):
     avg_test_loss_h0_5, target_test_h0_5, pred_test_h0_5 = test(test_dataloader_h0_5, model_h0_5, loss_fn)
     avg_train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5)
     avg_valid_loss_h0_5, target_valid_h0_5, pred_valid_h0_5 = valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
@@ -186,7 +188,7 @@ if trained_regimes["h=0.5"]:
 
     # Print the result
     #print(f"The Hellinger distance between the two distributions is (h=0.5): {hellinger_distance(y_pred_h0_5, y_true_h0_5)}")
-if trained_regimes["h=1.0"]:
+if int(trained_regimes[2]):
     avg_test_loss_h1_0, target_test_h1_0, pred_test_h1_0 = test(test_dataloader_h1_0, model_h1_0, loss_fn)
     avg_train_loss_h1_0, target_train_h1_0, pred_train_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0)
     avg_valid_loss_h1_0, target_valid_h1_0, pred_valid_h1_0 = valid(valid_dataloader_h1_0, model_h1_0, loss_fn)
@@ -208,7 +210,7 @@ if trained_regimes["h=1.0"]:
     #print("types y_pred, y_true: ",(y_pred), (y_true))
     print(f"R square (h=1.0): {round(r2_score(y_pred_h1_0, y_true_h1_0),3)}")
     '''
-if trained_regimes["h=2.0"]:
+if int(trained_regimes[3]):
     avg_test_loss_h2_0, target_test_h2_0, pred_test_h2_0 = test(test_dataloader_h2_0, model_h2_0, loss_fn)
     avg_train_loss_h2_0, target_train_h2_0, pred_train_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0)
     avg_valid_loss_h2_0, target_valid_h2_0, pred_valid_h2_0 = valid(valid_dataloader_h2_0, model_h2_0, loss_fn)
@@ -233,7 +235,7 @@ if trained_regimes["h=2.0"]:
     print(f"R square (h=2.0): {round(r2_score(y_pred_h2_0, y_true_h2_0),3)}")
     print("Saved PyTorch Model State to saved_models\\model_h2_0.pth")
     '''
-if trained_regimes["h=10⁻⁶"]:
+if int(trained_regimes[0]):
     avg_test_loss_h1_0e6, target_test_h1_0e6, pred_test_h1_0e6 = test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)
     avg_train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
     avg_valid_loss_h1_0e6, target_valid_h1_0e6, pred_valid_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)

@@ -41,8 +41,8 @@ def train(dataloader, model, loss_fn, optimizer):
     
     target_points, pred_points = torch.cat(target_points).flatten().numpy(), torch.cat(pred_points).detach().numpy()
     losses = [loss.item() for loss in losses]
-    print(f"Train losses: {losses}")
+    #print(f"Train losses: {losses}")
     
-    print(f"Target points and pred_points: {type(target_points)}, {type(pred_points)}")
+    #print(f"Target points and pred_points: {type(target_points)}, {type(pred_points)}")
             
     return total_loss / len(dataloader), target_points, pred_points

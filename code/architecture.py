@@ -8,7 +8,17 @@ from torch.utils.data import random_split
 from torch.nn import Parameter
 from torchinfo import summary
 
-from config import N_spins, W, device, HIDDEN_LAYERS, INPUT_SIZE
+from config import N_spins, W, device, HIDDEN_LAYERS, INPUT_SIZE, ACT_FUNCTION
+
+activation_f = None
+
+match ACT_FUNCTION:
+    case 0:
+        activation_f = nn.GELU()
+    case 1:
+        activation_f = nn.Tanh()
+    case 2:
+        activation_f = nn.ReLU()
 
 class NeuralNetwork(nn.Module):
     def __init__(self):
@@ -17,12 +27,12 @@ class NeuralNetwork(nn.Module):
         layers = []
         layers.append(nn.Linear(N_spins, W))
         layers.append(nn.LayerNorm(W))
-        layers.append(nn.GELU())
+        layers.append(activation_f)
         
         for hl in range(HIDDEN_LAYERS):
             layers.append(nn.Linear(W, W))
             layers.append(nn.LayerNorm(W))
-            layers.append(nn.GELU())
+            layers.append(activation_f)
             
         layers.append(nn.Linear(W, 1))
         
@@ -43,7 +53,7 @@ model_h2_0 = NeuralNetwork().to(device)
 model_h1_0e6 = NeuralNetwork().to(device)
 
 
-summary_str = str(summary(model_h0_5, INPUT_SIZE))
-print(summary_str)
+#summary_str = str(summary(model_h0_5, INPUT_SIZE))
+#print(summary_str)
 #print(model_h0_5.input_shape())
 #print(model_h0_5.Torch)
