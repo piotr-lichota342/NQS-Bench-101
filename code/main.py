@@ -10,6 +10,7 @@ from torch.utils.data import random_split
 import time
 from sklearn.metrics import r2_score, mean_squared_error, root_mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, mean_squared_log_error
 import numpy as np
+import torch.nn as nn
 from keras import backend as K
 import sklearn
 from tqdm import tqdm
@@ -24,9 +25,39 @@ from dataset_loading import valid_dataloader_h0_5, valid_dataloader_h1_0, valid_
 from architecture import model_h0_5, model_h1_0, model_h2_0, model_h1_0e6
 from train import train
 from valid import valid
+
 from test import test
 from config import EPOCHS, device, trained_regimes
 #from distancia import Hellinger
+
+
+# Source: https://github.com/mschuylermoss/DoubleDescentNQS/blob/main/cost_functions.py
+def hellinger_distance(true, pred):
+
+    def distance():
+        scale=1
+        logpsi = pred # model output
+        psi = torch.exp(logpsi) 
+        prob = psi**2 * scale
+        
+        true_prob = torch.exp(true)**2
+        
+        return (torch.sqrt(prob) - torch.sqrt(true_prob)) ** 2
+    
+    hellinger_distance = (1/torch.sqrt(torch.tensor(2, dtype=torch.int8))) * torch.sqrt(distance())
+    
+    return hellinger_distance
+
+
+class HellingerLoss(nn.Module):
+    def __init__(self):
+        super(HellingerLoss, self).__init__()
+        #self.weight = weight
+
+    def forward(self, true, pred):
+        # Compute the loss
+        loss = hellinger_distance(true, pred)
+        return loss.mean()
 
 """
 Evaluation metrics (https://developer.nvidia.com/blog/a-comprehensive-overview-of-regression-evaluation-metrics/):
@@ -91,9 +122,9 @@ print(model_h0_5)
 
 
 
-loss_fn = nn.MSELoss()
+loss_fn = HellingerLoss() # nn.MSELoss
 
-optimizer_h0_5 = torch.optim.Adam(model_h0_5.parameters(), lr=1e-3) 
+optimizer_h0_5 = torch.optim.AdamW(model_h0_5.parameters(), lr=3e-4, weight_decay=1e-4) 
 optimizer_h1_0 = torch.optim.Adam(model_h1_0.parameters(), lr=1e-3) 
 optimizer_h2_0 = torch.optim.Adam(model_h2_0.parameters(), lr=1e-3) 
 optimizer_h1_0e6 = torch.optim.Adam(model_h1_0e6.parameters(), lr=1e-3) 
@@ -110,7 +141,7 @@ train_losses_h1_0e6, valid_losses_h1_0e6 = [], []
 start_training_time = time.time()
 
 
-for t in range(EPOCHS):
+for t in tqdm(range(EPOCHS)):
     print(f"Epoch {t+1}/{EPOCHS}\n===============================")
     
     if int(trained_regimes[1]):
@@ -153,7 +184,7 @@ y_pred_h2_0, y_true_h2_0 = [], []
    
 
 if int(trained_regimes[1]):
-    avg_test_loss_h0_5, target_test_h0_5, pred_test_h0_5 = test(test_dataloader_h0_5, model_h0_5, loss_fn)
+    avg_test_loss_h0_5, _, target_test_h0_5, pred_test_h0_5 = test(test_dataloader_h0_5, model_h0_5, loss_fn)
     avg_train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5)
     avg_valid_loss_h0_5, target_valid_h0_5, pred_valid_h0_5 = valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
     
@@ -189,7 +220,7 @@ if int(trained_regimes[1]):
     # Print the result
     #print(f"The Hellinger distance between the two distributions is (h=0.5): {hellinger_distance(y_pred_h0_5, y_true_h0_5)}")
 if int(trained_regimes[2]):
-    avg_test_loss_h1_0, target_test_h1_0, pred_test_h1_0 = test(test_dataloader_h1_0, model_h1_0, loss_fn)
+    avg_test_loss_h1_0, _, target_test_h1_0, pred_test_h1_0 = test(test_dataloader_h1_0, model_h1_0, loss_fn)
     avg_train_loss_h1_0, target_train_h1_0, pred_train_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0)
     avg_valid_loss_h1_0, target_valid_h1_0, pred_valid_h1_0 = valid(valid_dataloader_h1_0, model_h1_0, loss_fn)
     #size = len(dataloader_h1_0.dataset)
@@ -211,7 +242,7 @@ if int(trained_regimes[2]):
     print(f"R square (h=1.0): {round(r2_score(y_pred_h1_0, y_true_h1_0),3)}")
     '''
 if int(trained_regimes[3]):
-    avg_test_loss_h2_0, target_test_h2_0, pred_test_h2_0 = test(test_dataloader_h2_0, model_h2_0, loss_fn)
+    avg_test_loss_h2_0, _, target_test_h2_0, pred_test_h2_0 = test(test_dataloader_h2_0, model_h2_0, loss_fn)
     avg_train_loss_h2_0, target_train_h2_0, pred_train_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0)
     avg_valid_loss_h2_0, target_valid_h2_0, pred_valid_h2_0 = valid(valid_dataloader_h2_0, model_h2_0, loss_fn)
     #print(f"Loss on the test set (h=2.0): {avg_test_loss_h2_0}.\n")
@@ -236,7 +267,7 @@ if int(trained_regimes[3]):
     print("Saved PyTorch Model State to saved_models\\model_h2_0.pth")
     '''
 if int(trained_regimes[0]):
-    avg_test_loss_h1_0e6, target_test_h1_0e6, pred_test_h1_0e6 = test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)
+    avg_test_loss_h1_0e6, _, target_test_h1_0e6, pred_test_h1_0e6 = test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)
     avg_train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
     avg_valid_loss_h1_0e6, target_valid_h1_0e6, pred_valid_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
 

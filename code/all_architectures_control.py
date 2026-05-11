@@ -5,14 +5,14 @@ from datetime import datetime
 import itertools
 from tqdm import tqdm
 
-epoch_range = [3, 5]
+epoch_range = [32]
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 
-regimes_combinations = ["1000", "0100"]
-hidden_layers_range = range(4,6)
-act_functions_range = range(0,2)
+regimes_combinations = ["0100"]
+hidden_layers_range = range(0,1)
+act_functions_range = range(0,1)
 
 
 
@@ -25,7 +25,7 @@ for combination in dict_regimes_combinations:
 """
        
     
-for regim_comb in tqdm(regimes_combinations):
+for regim_comb in regimes_combinations:
     print(f"Current regime: {regim_comb}")
     env = os.environ.copy()
     env["trained_regimes"] = regim_comb

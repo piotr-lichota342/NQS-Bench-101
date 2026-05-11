@@ -29,12 +29,17 @@ class NeuralNetwork(nn.Module):
         layers.append(nn.LayerNorm(W))
         layers.append(activation_f)
         
+        layers.append(nn.Linear(W, 256))
+        layers.append(nn.LayerNorm(256))
+        layers.append(activation_f)
+        
+        
         for hl in range(HIDDEN_LAYERS):
             layers.append(nn.Linear(W, W))
             layers.append(nn.LayerNorm(W))
             layers.append(activation_f)
             
-        layers.append(nn.Linear(W, 1))
+        layers.append(nn.Linear(256, 1))
         
         self.linear_gelu_stack = nn.Sequential(
             *layers

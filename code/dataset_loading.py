@@ -96,7 +96,7 @@ for features, targets in dataloader:
 
 
  
-train_dataloader_h0_5, test_dataloader_h0_5, valid_dataloader_h0_5 = DataLoader(train_dataset_h0_5, batch_size=BATCH_SIZE, shuffle=True), DataLoader(test_dataset_h0_5, batch_size=BATCH_SIZE, shuffle=False), DataLoader(valid_dataset_h0_5, batch_size=BATCH_SIZE, shuffle=False)
-train_dataloader_h1_0, test_dataloader_h1_0, valid_dataloader_h1_0 = DataLoader(train_dataset_h1_0, batch_size=BATCH_SIZE, shuffle=True), DataLoader(test_dataset_h1_0, batch_size=BATCH_SIZE, shuffle=False), DataLoader(valid_dataset_h1_0, batch_size=BATCH_SIZE, shuffle=False)
-train_dataloader_h2_0, test_dataloader_h2_0, valid_dataloader_h2_0 = DataLoader(train_dataset_h2_0, batch_size=BATCH_SIZE, shuffle=True), DataLoader(test_dataset_h2_0, batch_size=BATCH_SIZE, shuffle=False), DataLoader(valid_dataset_h2_0, batch_size=BATCH_SIZE, shuffle=False)
-train_dataloader_h1_0e6, test_dataloader_h1_0e6, valid_dataloader_h1_0e6 = DataLoader(train_dataset_h1_0e6, batch_size=BATCH_SIZE, shuffle=True), DataLoader(test_dataset_h1_0e6, batch_size=BATCH_SIZE, shuffle=False), DataLoader(valid_dataset_h1_0e6, batch_size=BATCH_SIZE, shuffle=False)
+train_dataloader_h0_5, test_dataloader_h0_5, valid_dataloader_h0_5 = DataLoader(train_dataset_h0_5, batch_size=BATCH_SIZE, shuffle=True), DataLoader(test_dataset_h0_5, batch_size=BATCH_SIZE, shuffle=True), DataLoader(valid_dataset_h0_5, batch_size=BATCH_SIZE, shuffle=True)
+train_dataloader_h1_0, test_dataloader_h1_0, valid_dataloader_h1_0 = DataLoader(train_dataset_h1_0, batch_size=BATCH_SIZE, shuffle=True), DataLoader(test_dataset_h1_0, batch_size=BATCH_SIZE, shuffle=True), DataLoader(valid_dataset_h1_0, batch_size=BATCH_SIZE, shuffle=True)
+train_dataloader_h2_0, test_dataloader_h2_0, valid_dataloader_h2_0 = DataLoader(train_dataset_h2_0, batch_size=BATCH_SIZE, shuffle=True), DataLoader(test_dataset_h2_0, batch_size=BATCH_SIZE, shuffle=True), DataLoader(valid_dataset_h2_0, batch_size=BATCH_SIZE, shuffle=True)
+train_dataloader_h1_0e6, test_dataloader_h1_0e6, valid_dataloader_h1_0e6 = DataLoader(train_dataset_h1_0e6, batch_size=BATCH_SIZE, shuffle=True), DataLoader(test_dataset_h1_0e6, batch_size=BATCH_SIZE, shuffle=True), DataLoader(valid_dataset_h1_0e6, batch_size=BATCH_SIZE, shuffle=True)

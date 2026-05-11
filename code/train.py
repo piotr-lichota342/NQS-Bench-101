@@ -25,7 +25,9 @@ def train(dataloader, model, loss_fn, optimizer):
         pred_points.append(pred)
         y = y.unsqueeze(1)
         #print("The prediction is: ", pred)
+        
         loss = loss_fn(pred, y)
+        
         losses.append(loss)
 
         # Backpropagation

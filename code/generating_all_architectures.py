@@ -5,7 +5,7 @@ from main import model_h0_5, model_h1_0, model_h2_0, model_h1_0e6
 from dataset_loading import train_dataloader_h0_5, train_dataloader_h1_0, train_dataloader_h2_0, train_dataloader_h1_0e6
 from dataset_loading import test_dataloader_h0_5, test_dataloader_h1_0, test_dataloader_h2_0, test_dataloader_h1_0e6
 from dataset_loading import valid_dataloader_h0_5, valid_dataloader_h1_0, valid_dataloader_h2_0, valid_dataloader_h1_0e6
-
+from math import e
 from main import valid_losses_h1_0e6, valid_losses_h0_5, valid_losses_h1_0, valid_losses_h2_0
 from main import loss_fn, y_true_h1_0e6, y_pred_h1_0e6, y_true_h0_5, y_pred_h0_5, y_true_h1_0, y_pred_h1_0, y_true_h2_0, y_pred_h2_0, optimizer_h0_5, optimizer_h1_0, optimizer_h1_0e6, optimizer_h2_0, total_training_time
 from config import trained_regimes, EPOCHS, BATCH_SIZE, W, TEST_PROPORTION, TRAIN_PROPORTION, VALID_PROPORTION, HIDDEN_LAYERS, INPUT_SIZE, device, trained_regimes, DECIMAL_PLACES_METRICS, SAVING_WEIGHTS, TIMESTAMP, ACT_FUNCTION
@@ -44,7 +44,20 @@ Each training log consists of (for each trained regime):
 
 """
 
-
+def infidelity(true, pred):
+    true_np, pred_np = np.array(true), np.array(pred)
+    true_np, pred_np = np.power(e, true_np), np.power(e, pred_np) # converting from log amplitudes
+    
+    mult = true_np * pred_np
+    root = np.sqrt(mult)
+    sum_r = np.sum(root)
+    sum_r = np.abs(sum_r)
+    fid = sum_r ** 2
+        
+    
+    infid = 1 - fid
+    infid = float(infid)
+    return infid
 
 def smape(a, f):
     a_np, f_np = np.array(a), np.array(f)
@@ -88,14 +101,14 @@ try:
 except EmptyDataError:
     global_metrics_dataframe = pd.DataFrame()
 
-epoch_range = [3,5]
+epoch_range = [32]
 
 print(f"Number of epochs: {EPOCHS}")
 timestamp = TIMESTAMP
 
 str_regimes=["h_1_0e6", "h_0_5", "h_1_0", "h_2_0"]
 str_epochs = [f"{x}_epochs" for x in epoch_range]
-str_h_layers = ["4_hidden_layers", "5_hidden_layers"]
+str_h_layers = ["0_hidden_layers", "4_hidden_layers"]
 str_act_fn = ["gelu", "tanh", "relu"]
 
 activation=None
@@ -233,7 +246,10 @@ metrics_data = {
     #'ESS': None,
     'hellinger_dist_test': None,
     'hellinger_dist_train': None,
-    'hellinger_dist_valid': None
+    'hellinger_dist_valid': None,
+    'infidelity_test': None,
+    'infidelity_train': None,
+    'infidelity_valid': None
     
 }
 
@@ -244,10 +260,15 @@ df_metrics_all = pd.DataFrame()
 
 f1 = plt.figure(edgecolor='black')
 f2 = plt.figure()
+
 ax1 = f1.add_subplot(1,1,1)
 ax2 = f2.add_subplot(1,1,1)
+
 ax1.set_xlabel(r"True $\log\psi_\omega(\vec{\sigma})$")
 ax1.set_ylabel(r"Predicted $\log\psi_\omega(\vec{\sigma})$")
+
+
+
 
 #f1.set_edgecolor("black")
 
@@ -257,8 +278,9 @@ ax2.set_xlabel("Epoch")
 ax2.set_ylabel(f"{loss_fn.__class__.__name__} (log scale)")
 ax2.set_title("(NQS-Bench-101): Training vs Validation Loss")
 
+
 ax2.grid(True)
-ax2.set_yscale("log")
+#ax2.set_yscale("log")
 
 graph = go.Figure()
 graph2 = go.Figure()
@@ -292,9 +314,37 @@ if int(trained_regimes[0]):
 
     csv_file_path = f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\metrics.csv'
     
-    avg_test_loss_h1_0e6, target_test_h1_0e6, pred_test_h1_0e6 = test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)
+    avg_test_loss_h1_0e6, amplitudes_h1_0e6, target_test_h1_0e6, pred_test_h1_0e6 = test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)
     avg_train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
     avg_valid_loss_h1_0e6, target_valid_h1_0e6, pred_valid_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
+    
+    
+    
+    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\pred_test_h1_0e6.txt', 'w') as file:
+        # Join the list elements into a single string with a newline character
+        data_to_write = '\n'.join([str(x) for x in pred_test_h1_0e6])
+        # Write the data to the file
+        file.write(data_to_write)
+        
+    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\target_test_h1_0e6.txt', 'w') as file:
+        # Join the list elements into a single string with a newline character
+        data_to_write = '\n'.join([str(x) for x in target_test_h1_0e6])
+        # Write the data to the file
+        file.write(data_to_write)
+    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\input_amplitudes_h1_0e6.txt', 'w') as file:
+        # Join the list elements into a single string with a newline character
+        str_confs = []
+        for x in amplitudes_h1_0e6:
+            for y in x:
+                y = y.tolist()
+                int_conf = [str(int(z)) for z in y]
+                conf_str = "".join(int_conf)
+                str_confs.append(conf_str)
+                print(conf_str)
+        data_to_write = '\n'.join(str_confs)
+        # Write the data to the file
+        file.write(data_to_write)
+    
     #perfect_prediction_x = [0,max(max(y_true_h1_0e6), max(y_pred_h1_0e6))]
     dict_optimizer_h1_0e6 = optimizer_h1_0e6.param_groups[0]
     dict_optimizer_h1_0e6.pop('params')
@@ -316,6 +366,7 @@ if int(trained_regimes[0]):
         df_metrics_h1_0e6["MSE_valid"] = 'NaN'
         df_metrics_h1_0e6["MAE_valid"] = 'NaN'
         df_metrics_h1_0e6["hellinger_dist_valid"] = 'NaN'
+        
     else:
         df_metrics_h1_0e6['valid_loss'] = round(avg_valid_loss_h1_0e6,DECIMAL_PLACES_METRICS) 
         df_metrics_h1_0e6['R2_valid'] = round(r2_score(target_valid_h1_0e6, pred_valid_h1_0e6),DECIMAL_PLACES_METRICS)
@@ -371,6 +422,8 @@ if int(trained_regimes[0]):
     ax2.plot(valid_losses_h1_0e6, label=r"Valid loss ($h=10^{-6}$)")
     ax1.plot(target_test_h1_0e6, pred_test_h1_0e6, 'o', markersize=5, label=r"$h=10^{-6}$", alpha=0.5, mec='black')
     
+    
+    
     #ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y = x (perfect prediction)", linewidth=0.5, color='cyan')
     #graph = go.Figure()
     graph.add_trace(go.Scatter(x=target_test_h1_0e6, y=pred_test_h1_0e6, mode='markers', name=r"$h=10^{-6}$", opacity=0.5))
@@ -400,10 +453,11 @@ if int(trained_regimes[1]):
 
     save_path_loss_curve_html = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\loss_curve.html"
     save_path_pred_true_html = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\pred_true_curve.html"
+    save_path_infidelity_regimes = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\infidelity_regimes.png"
 
     csv_file_path = f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\metrics.csv'
     
-    avg_test_loss_h0_5, target_test_h0_5, pred_test_h0_5 = test(test_dataloader_h0_5, model_h0_5, loss_fn)
+    avg_test_loss_h0_5, amplitudes_h0_5, target_test_h0_5, pred_test_h0_5 = test(test_dataloader_h0_5, model_h0_5, loss_fn)
     avg_train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5)
     avg_valid_loss_h0_5, target_valid_h0_5, pred_valid_h0_5 = valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
     #perfect_prediction_x = [0,max(max(y_true_h0_5), max(y_pred_h0_5))]
@@ -412,6 +466,33 @@ if int(trained_regimes[1]):
     
     total_params = sum(p.numel() for p in model_h0_5.parameters())
     train_params = sum(p.numel() for p in model_h0_5.parameters() if p.requires_grad)
+    
+    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\pred_test_h0_5.txt', 'w') as file:
+        # Join the list elements into a single string with a newline character
+        #print(f"pred_test_h0_5.tolist(): {pred_test_h0_5.tolist()}")
+        data_to_write = '\n'.join([str(x.tolist()) for x in pred_test_h0_5])
+        # Write the data to the file
+        file.write(data_to_write)
+        
+    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\target_test_h0_5.txt', 'w') as file:
+        # Join the list elements into a single string with a newline character
+        data_to_write = '\n'.join([str(x.tolist()) for x in target_test_h0_5])
+        # Write the data to the file
+        file.write(data_to_write)
+    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\input_amplitudes_h0_5.txt', 'w') as file:
+        # Join the list elements into a single string with a newline character
+        #print(f"amplitudes_h0_5 data type: {type(amplitudes_h0_5)}")
+        str_confs = []
+        for x in amplitudes_h0_5:
+            for y in x:
+                y = y.tolist()
+                int_conf = [str(int(z)) for z in y]
+                conf_str = "".join(int_conf)
+                str_confs.append(conf_str)
+                print(conf_str)
+        data_to_write = '\n'.join(str_confs)
+        # Write the data to the file
+        file.write(data_to_write)
     
 
     
@@ -433,6 +514,7 @@ if int(trained_regimes[1]):
         df_metrics_h0_5["MSE_valid"] = round(mean_squared_error(target_valid_h0_5, pred_valid_h0_5),DECIMAL_PLACES_METRICS)
         df_metrics_h0_5["MAE_valid"] = round(mean_absolute_error(target_valid_h0_5, pred_valid_h0_5),DECIMAL_PLACES_METRICS)
         df_metrics_h0_5["hellinger_dist_valid"] = np.round(hellinger_distance(target_valid_h0_5, pred_valid_h0_5),decimals=DECIMAL_PLACES_METRICS)
+
     #df_metrics_h0_5['model_summary'] = str(summary(model_h0_5, INPUT_SIZE))
     df_metrics_h0_5['total_params'] = total_params
     df_metrics_h0_5['train_params'] = train_params
@@ -453,6 +535,11 @@ if int(trained_regimes[1]):
     
     df_metrics_h0_5["hellinger_dist_test"] = np.round(hellinger_distance(target_test_h0_5, pred_test_h0_5),decimals=DECIMAL_PLACES_METRICS)
     df_metrics_h0_5["hellinger_dist_train"] = np.round(hellinger_distance(target_train_h0_5, pred_train_h0_5),decimals=DECIMAL_PLACES_METRICS)
+    
+    df_metrics_h0_5['infidelity_test'] = round(infidelity(target_test_h0_5, pred_test_h0_5), DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5['infidelity_train'] = round(infidelity(target_train_h0_5, pred_train_h0_5), DECIMAL_PLACES_METRICS)
+    df_metrics_h0_5['infidelity_valid'] = round(infidelity(target_valid_h0_5, pred_valid_h0_5), DECIMAL_PLACES_METRICS)
+
         
     
     #df_metrics_h0_5["RMSE"] = round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
@@ -475,12 +562,15 @@ if int(trained_regimes[1]):
     hell_dist = hellinger_distance(y_pred_h0_5, y_true_h0_5)
         
     '''
-    plot_metrics = "\n"+r"$R^2$"+f"={round(r2_score(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}, MSE={round(mean_squared_error(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}, MAE={round(mean_absolute_error(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}"
+    plot_metrics = "\n"+r"$R^2$"+f"={round(r2_score(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}, MSE={round(mean_squared_error(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}, MAE={round(mean_absolute_error(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}, " + r"$\mathcal{I}$" + f"={round(infidelity(target_test_h0_5, pred_test_h0_5), DECIMAL_PLACES_METRICS)}"
     plot_title = r"(NQS-Bench-101): True vs. Predicted $\log\psi_\omega(\vec{\sigma})$"
     ax1.set_title(plot_title + plot_metrics)
     ax2.plot(train_losses_h0_5, label="Train loss (h=0.5)")
     ax2.plot(valid_losses_h0_5, label="Valid loss (h=0.5)")
     ax1.plot(target_test_h0_5, pred_test_h0_5, 'o', markersize=5, label="h=0.5", alpha=0.5, mec='black')
+    
+    
+    
     
     #ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y = x (perfect prediction)", linewidth=0.5, color='cyan')
     #graph = go.Figure()
@@ -518,9 +608,34 @@ if int(trained_regimes[2]):
 
     csv_file_path = f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\metrics.csv'
     
-    avg_test_loss_h1_0, target_test_h1_0, pred_test_h1_0 = test(test_dataloader_h1_0, model_h1_0, loss_fn)
+    avg_test_loss_h1_0, amplitudes_h1_0, target_test_h1_0, pred_test_h1_0 = test(test_dataloader_h1_0, model_h1_0, loss_fn)
     avg_train_loss_h1_0, target_train_h1_0, pred_train_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0)
     avg_valid_loss_h1_0, target_valid_h1_0, pred_valid_h1_0 = valid(valid_dataloader_h1_0, model_h1_0, loss_fn)
+    
+    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\pred_test_h1_0.txt', 'w') as file:
+        # Join the list elements into a single string with a newline character
+        data_to_write = '\n'.join([str(x) for x in pred_test_h1_0])
+        # Write the data to the file
+        file.write(data_to_write)
+        
+    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\target_test_h1_0.txt', 'w') as file:
+        # Join the list elements into a single string with a newline character
+        data_to_write = '\n'.join([str(x) for x in target_test_h1_0])
+        # Write the data to the file
+        file.write(data_to_write)
+    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\input_amplitudes_h1_0.txt', 'w') as file:
+        # Join the list elements into a single string with a newline character
+        str_confs = []
+        for x in amplitudes_h1_0:
+            for y in x:
+                y = y.tolist()
+                int_conf = [str(int(z)) for z in y]
+                conf_str = "".join(int_conf)
+                str_confs.append(conf_str)
+                print(conf_str)
+        data_to_write = '\n'.join(str_confs)
+        # Write the data to the file
+        file.write(data_to_write)
     #perfect_prediction_x = [0,max(max(y_true_h1_0), max(y_pred_h1_0))]
     dict_optimizer_h1_0 = optimizer_h1_0.param_groups[0]
     dict_optimizer_h1_0.pop('params')
@@ -625,9 +740,35 @@ if int(trained_regimes[3]):
     save_path_pred_true_html = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\pred_true_curve.html"
 
     csv_file_path = f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\metrics.csv'
-    avg_test_loss_h2_0, target_test_h2_0, pred_test_h2_0 = test(test_dataloader_h2_0, model_h2_0, loss_fn)
+    avg_test_loss_h2_0, amplitudes_h2_0, target_test_h2_0, pred_test_h2_0 = test(test_dataloader_h2_0, model_h2_0, loss_fn)
     avg_train_loss_h2_0, target_train_h2_0, pred_train_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0)
     avg_valid_loss_h2_0, target_valid_h2_0, pred_valid_h2_0 = valid(valid_dataloader_h2_0, model_h2_0, loss_fn)
+    
+    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\pred_test_h2_0.txt', 'w') as file:
+        # Join the list elements into a single string with a newline character
+        data_to_write = '\n'.join([str(x) for x in pred_test_h2_0])
+        # Write the data to the file
+        file.write(data_to_write)
+        
+    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\target_test_h2_0.txt', 'w') as file:
+        # Join the list elements into a single string with a newline character
+        data_to_write = '\n'.join([str(x) for x in target_test_h2_0])
+        # Write the data to the file
+        file.write(data_to_write)
+    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\input_amplitudes_h2_0.txt', 'w') as file:
+        # Join the list elements into a single string with a newline character
+        str_confs = []
+        for x in amplitudes_h2_0:
+            for y in x:
+                y = y.tolist()
+                int_conf = [str(int(z)) for z in y]
+                conf_str = "".join(int_conf)
+                str_confs.append(conf_str)
+                print(conf_str)
+        data_to_write = '\n'.join(str_confs)
+        # Write the data to the file
+        file.write(data_to_write)
+    
     #perfect_prediction_x = [0,max(max(y_true_h2_0), max(y_pred_h2_0))]
     dict_optimizer_h2_0 = optimizer_h2_0.param_groups[0]
     dict_optimizer_h2_0.pop('params')
@@ -739,6 +880,7 @@ ax2.legend(title="Legend")
     
 f1.savefig(save_path_pred_true, dpi=300, bbox_inches="tight")
 f2.savefig(save_path_loss_curve, dpi=300, bbox_inches="tight")
+
 #plt.show(block=False)
 
 
