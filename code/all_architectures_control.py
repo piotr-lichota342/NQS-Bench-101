@@ -5,12 +5,12 @@ from datetime import datetime
 import itertools
 from tqdm import tqdm
 
-epoch_range = [32]
+epoch_range = [5]
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 
-regimes_combinations = ["0100"]
+regimes_combinations = ["0001"]
 hidden_layers_range = range(0,1)
 act_functions_range = range(0,1)
 

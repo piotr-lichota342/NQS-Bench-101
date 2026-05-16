@@ -124,10 +124,10 @@ print(model_h0_5)
 
 loss_fn = HellingerLoss() # nn.MSELoss
 
-optimizer_h0_5 = torch.optim.AdamW(model_h0_5.parameters(), lr=3e-4, weight_decay=1e-4) 
+optimizer_h0_5 = torch.optim.Adam(model_h0_5.parameters(), lr=1e-3, weight_decay=1e-4) 
 optimizer_h1_0 = torch.optim.Adam(model_h1_0.parameters(), lr=1e-3) 
-optimizer_h2_0 = torch.optim.Adam(model_h2_0.parameters(), lr=1e-3) 
-optimizer_h1_0e6 = torch.optim.Adam(model_h1_0e6.parameters(), lr=1e-3) 
+optimizer_h2_0 = torch.optim.AdamW(model_h2_0.parameters(), lr=3.5e-5, weight_decay=1e-1) 
+optimizer_h1_0e6 = torch.optim.AdamW(model_h1_0e6.parameters(), lr=1e-3) 
 
 #print(optimizer_h0_5.get_config())
 
@@ -165,7 +165,7 @@ for t in tqdm(range(EPOCHS)):
         train_losses_h2_0.append(train_loss_h2_0)
         valid_losses_h2_0.append(valid_loss_h2_0)
     if int(trained_regimes[0]):
-        print("Losses for h=10⁻⁶\n")
+        print("Losses for h=1.0⁻⁶\n")
         train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
         valid_loss_h1_0e6, target_valid_h1_0e6, pred_valid_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
         train_losses_h1_0e6.append(train_loss_h1_0e6)
@@ -271,7 +271,7 @@ if int(trained_regimes[0]):
     avg_train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
     avg_valid_loss_h1_0e6, target_valid_h1_0e6, pred_valid_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
 
-    #print(f"Loss on the test set (h=10⁻⁶): {avg_test_loss_h1_0e6}.\n")
+    #print(f"Loss on the test set (h=1.0⁻⁶): {avg_test_loss_h1_0e6}.\n")
     #torch.save(model_h1_0e6.state_dict(), "saved_models\\model_h1_0e6.pth")
     #print("Saved PyTorch Model State to saved_models\\ model_h1_0e6.pth")
     #size = len(dataloader_h1_0e6.dataset)
@@ -290,7 +290,7 @@ if int(trained_regimes[0]):
     y_pred_h1_0e6 = [x.item() for x in y_pred_h1_0e6]
     y_true_h1_0e6 = [x.item() for x in y_true_h1_0e6]
     #print("types y_pred, y_true: ",(y_pred), (y_true))
-    print(f"R square (h=10⁻⁶): {round(r2_score(y_pred_h1_0e6, y_true_h1_0e6),3)}")
+    print(f"R square (h=1.0⁻⁶): {round(r2_score(y_pred_h1_0e6, y_true_h1_0e6),3)}")
     '''
 
 #print("Train losses h=0.5: ",train_losses_h0_5)
