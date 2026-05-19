@@ -5,7 +5,7 @@ from datetime import datetime
 import itertools
 from tqdm import tqdm
 
-epoch_range = [5]
+epoch_range = [300,500]
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 

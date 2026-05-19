@@ -101,7 +101,7 @@ try:
 except EmptyDataError:
     global_metrics_dataframe = pd.DataFrame()
 
-epoch_range = [5]
+epoch_range = [300,500]
 
 print(f"Number of epochs: {EPOCHS}")
 timestamp = TIMESTAMP
