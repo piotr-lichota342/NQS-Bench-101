@@ -10,7 +10,7 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 
-regimes_combinations = ["0001"]
+regimes_combinations = ["0100"]
 hidden_layers_range = range(0,1)
 act_functions_range = range(0,1)
 

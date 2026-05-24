@@ -4,7 +4,7 @@ from datetime import datetime
 
 N_spins = 12
 BATCH_SIZE = 40
-W = 4096
+W = 8192
 EPOCHS = int(os.environ.get("EPOCHS", 3))
 HIDDEN_LAYERS = int(os.environ.get("HIDDEN_LAYERS", 2))
 INPUT_SIZE = (32,12)
