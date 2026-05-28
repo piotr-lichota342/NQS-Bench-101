@@ -11,7 +11,7 @@ import time
 from sklearn.metrics import r2_score, mean_squared_error, root_mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, mean_squared_log_error
 import numpy as np
 import torch.nn as nn
-from keras import backend as K
+
 import sklearn
 from tqdm import tqdm
 #import astropy
@@ -27,7 +27,7 @@ from train import train
 from valid import valid
 
 from test import test
-from config import EPOCHS, device, trained_regimes
+from config import EPOCHS, device, trained_regimes, DATASET_SIZE, TEST_PROPORTION, EXPONENTIAL_LR
 #from distancia import Hellinger
 
 
@@ -35,16 +35,21 @@ from config import EPOCHS, device, trained_regimes
 def hellinger_distance(true, pred):
 
     def distance():
-        scale=1
-        logpsi = pred # model output
-        psi = torch.exp(logpsi) 
-        prob = psi**2 * scale
-        
-        true_prob = torch.exp(true)**2
-        
-        return (torch.sqrt(prob) - torch.sqrt(true_prob)) ** 2
     
-    hellinger_distance = (1/torch.sqrt(torch.tensor(2, dtype=torch.int8))) * torch.sqrt(distance())
+        log_true = true # model output
+        exp_true = torch.exp(log_true) 
+        abs_true = torch.abs(exp_true)
+        norm_prob_true = abs_true / torch.sum(abs_true)
+        
+        log_pred = pred
+        exp_pred = torch.exp(log_pred)
+        abs_pred = torch.abs(exp_pred)
+        norm_prob_pred = abs_pred / torch.sum(abs_pred)
+
+        
+        return (torch.sqrt(norm_prob_pred) - torch.sqrt(norm_prob_true)) ** 2
+    
+    hellinger_distance = (1/np.sqrt(2)) * torch.sqrt(torch.sum(distance()))
     
     return hellinger_distance
 
@@ -140,6 +145,10 @@ train_losses_h1_0e6, valid_losses_h1_0e6 = [], []
 
 start_training_time = time.time()
 
+scheduler_h0_5 = torch.optim.lr_scheduler.ExponentialLR(optimizer_h0_5, gamma=0.95) if EXPONENTIAL_LR else None
+scheduler_h1_0 = torch.optim.lr_scheduler.ExponentialLR(optimizer_h1_0, gamma=0.95) if EXPONENTIAL_LR else None
+scheduler_h2_0 = torch.optim.lr_scheduler.ExponentialLR(optimizer_h2_0, gamma=0.95) if EXPONENTIAL_LR else None
+scheduler_h1_0e6 = torch.optim.lr_scheduler.ExponentialLR(optimizer_h1_0e6, gamma=0.95) if EXPONENTIAL_LR else None
 
 for t in tqdm(range(EPOCHS)):
     print(f"Epoch {t+1}/{EPOCHS}\n===============================")
@@ -150,6 +159,9 @@ for t in tqdm(range(EPOCHS)):
         valid_loss_h0_5, target_valid_h0_5, pred_valid_h0_5 = valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
         train_losses_h0_5.append(train_loss_h0_5)
         valid_losses_h0_5.append(valid_loss_h0_5)
+        scheduler_h0_5.step() if EXPONENTIAL_LR else None
+        print(f"Last learning rate (h=0.5): {scheduler_h0_5.get_last_lr()}") if EXPONENTIAL_LR else None
+        
         
     if int(trained_regimes[2]):
         print("Losses for h=1.0:\n")
@@ -157,6 +169,8 @@ for t in tqdm(range(EPOCHS)):
         valid_loss_h1_0, target_valid_h1_0, pred_valid_h1_0 = valid(valid_dataloader_h1_0, model_h1_0, loss_fn)
         train_losses_h1_0.append(train_loss_h1_0)
         valid_losses_h1_0.append(valid_loss_h1_0)
+        scheduler_h1_0.step() if EXPONENTIAL_LR else None
+        print(f"Last learning rate (h=1.0): {scheduler_h1_0.get_last_lr()}") if EXPONENTIAL_LR else None
         
     if int(trained_regimes[3]):
         print("Losses for h=2.0:\n")
@@ -164,12 +178,16 @@ for t in tqdm(range(EPOCHS)):
         valid_loss_h2_0, target_valid_h2_0, pred_valid_h2_0 = valid(valid_dataloader_h2_0, model_h2_0, loss_fn)
         train_losses_h2_0.append(train_loss_h2_0)
         valid_losses_h2_0.append(valid_loss_h2_0)
+        scheduler_h2_0.step() if EXPONENTIAL_LR else None
+        print(f"Last learning rate (h=2.0): {scheduler_h2_0.get_last_lr()}") if EXPONENTIAL_LR else None
     if int(trained_regimes[0]):
         print("Losses for h=1.0⁻⁶\n")
         train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
         valid_loss_h1_0e6, target_valid_h1_0e6, pred_valid_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
         train_losses_h1_0e6.append(train_loss_h1_0e6)
-        valid_losses_h1_0e6.append(valid_loss_h1_0e6)   
+        valid_losses_h1_0e6.append(valid_loss_h1_0e6) 
+        scheduler_h1_0e6.step() if EXPONENTIAL_LR else None
+        print(f"Last learning rate (h=1.0⁻⁶): {scheduler_h1_0e6.get_last_lr()}") if EXPONENTIAL_LR else None
  
 end_training_time = time.time() 
 total_training_time = round(end_training_time - start_training_time, 2)
