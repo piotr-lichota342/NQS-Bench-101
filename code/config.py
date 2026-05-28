@@ -4,7 +4,7 @@ from datetime import datetime
 
 N_spins = 12
 BATCH_SIZE = 40
-W = 8192
+W = 4096
 EPOCHS = int(os.environ.get("EPOCHS", 3))
 HIDDEN_LAYERS = int(os.environ.get("HIDDEN_LAYERS", 2))
 INPUT_SIZE = (32,12)
@@ -16,6 +16,7 @@ TEST_PROPORTION = 0.2
 VALID_PROPORTION = 0.1
 DATASET_SIZE = 4096
 TIMESTAMP = str(os.environ.get("TIMESTAMP", None))
+EXPONENTIAL_LR = True
 
 trained_regimes = os.environ.get("trained_regimes", None)
 
