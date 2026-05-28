@@ -8,7 +8,7 @@ from dataset_loading import valid_dataloader_h0_5, valid_dataloader_h1_0, valid_
 from math import e
 from main import valid_losses_h1_0e6, valid_losses_h0_5, valid_losses_h1_0, valid_losses_h2_0
 from main import loss_fn, y_true_h1_0e6, y_pred_h1_0e6, y_true_h0_5, y_pred_h0_5, y_true_h1_0, y_pred_h1_0, y_true_h2_0, y_pred_h2_0, optimizer_h0_5, optimizer_h1_0, optimizer_h1_0e6, optimizer_h2_0, total_training_time
-from config import trained_regimes, EPOCHS, BATCH_SIZE, W, TEST_PROPORTION, TRAIN_PROPORTION, VALID_PROPORTION, HIDDEN_LAYERS, INPUT_SIZE, device, trained_regimes, DECIMAL_PLACES_METRICS, SAVING_WEIGHTS, TIMESTAMP, ACT_FUNCTION
+from config import trained_regimes, EPOCHS, BATCH_SIZE, W, TEST_PROPORTION, TRAIN_PROPORTION, VALID_PROPORTION, HIDDEN_LAYERS, INPUT_SIZE, device, trained_regimes, DECIMAL_PLACES_METRICS, SAVING_WEIGHTS, TIMESTAMP, ACT_FUNCTION, DATASET_SIZE
 from torchinfo import summary
 from test import test
 from valid import valid
@@ -23,6 +23,8 @@ from sklearn.metrics import r2_score, mean_squared_error, root_mean_squared_erro
 import pandas as pd
 
 from datetime import datetime
+
+print("Hello generating all architectures.py")
 
 
 """
@@ -45,19 +47,13 @@ Each training log consists of (for each trained regime):
 """
 
 def infidelity(true, pred):
-    true_np, pred_np = np.array(true), np.array(pred)
-    true_np, pred_np = np.power(e, true_np), np.power(e, pred_np) # converting from log amplitudes
-    
-    mult = true_np * pred_np
-    #root = np.sqrt(mult)
-    sum_r = np.sum(mult)
-    sum_r = np.abs(sum_r)
-    fid = sum_r ** 2
-        
-    
-    infid = 1 - fid
-    infid = float(infid)
-    return infid
+    true_np, pred_np = np.exp(np.abs(true)), np.exp(np.abs(pred)) # converting from log amplitudes
+
+    true_np /= np.sqrt(np.sum(true_np**2))
+    pred_np /= np.sqrt(np.sum(pred_np**2))
+
+    overlap = np.sum(np.multiply(np.squeeze(pred_np),np.squeeze(true_np)))
+    return 1 - np.linalg.norm(overlap)**2
 
 def smape(a, f):
     a_np, f_np = np.array(a), np.array(f)
@@ -97,18 +93,19 @@ def hellinger_distance(p,q):
 from pandas.errors import EmptyDataError
 
 try:
-    global_metrics_dataframe = pd.read_csv('NQS-Bench-101\\all_architectures_metrics\\all_architectures_metrics.csv')
+    global_metrics_dataframe = pd.read_csv('all_architectures_metrics/all_architectures_metrics.csv')
 except EmptyDataError:
     global_metrics_dataframe = pd.DataFrame()
 
-epoch_range = [300,500]
+epoch_range = [1000]
 
 print(f"Number of epochs: {EPOCHS}")
 timestamp = TIMESTAMP
+print(f"The Timestamp inside generating_all_architectures: is: {timestamp}")
 
 str_regimes=["h_1_0e6", "h_0_5", "h_1_0", "h_2_0"]
 str_epochs = [f"{x}_epochs" for x in epoch_range]
-str_h_layers = ["0_hidden_layers", "4_hidden_layers"]
+str_h_layers = ["0_hidden_layers"]
 str_act_fn = ["gelu", "tanh", "relu"]
 
 activation=None
@@ -120,39 +117,39 @@ match int(ACT_FUNCTION):
     case 2:
         activation = 'relu'
 
-os.makedirs(os.path.join('NQS-Bench-101\\all_architectures', f"{timestamp}"), exist_ok=True)
+os.makedirs(os.path.join('all_architectures', f"{timestamp}"), exist_ok=True)
 
 for regim in str_regimes:
-    os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}', regim), exist_ok=True)
+    os.makedirs(os.path.join(f'all_architectures/{timestamp}', regim), exist_ok=True)
     for epoch in str_epochs:
-        os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\{regim}', epoch), exist_ok=True)
+        os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}', epoch), exist_ok=True)
         for hl in str_h_layers:
-            os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\{regim}\\{epoch}', hl), exist_ok=True)
+            os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{epoch}', hl), exist_ok=True)
             for af in str_act_fn:
-                os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\{regim}\\{epoch}\\{hl}', af), exist_ok=True)
+                os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{epoch}/{hl}', af), exist_ok=True)
                 
-                os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\{regim}\\{epoch}\\{hl}\\{af}', "curves"), exist_ok=True)
-                os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\{regim}\\{epoch}\\{hl}\\{af}', "evaluation_metrics"), exist_ok=True)
-                os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\{regim}\\{epoch}\\{hl}\\{af}', "model_weights"), exist_ok=True)
+                os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{epoch}/{hl}/{af}', "curves"), exist_ok=True)
+                os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{epoch}/{hl}/{af}', "evaluation_metrics"), exist_ok=True)
+                os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{epoch}/{hl}/{af}', "model_weights"), exist_ok=True)
 
 '''
-os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs', "curves"), exist_ok=True)
-os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs', "evaluation_metrics"), exist_ok=True)
-os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs', "model_weights"), exist_ok=True)
+os.makedirs(os.path.join(f'NQS-Bench-101/all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs', "curves"), exist_ok=True)
+os.makedirs(os.path.join(f'NQS-Bench-101/all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs', "evaluation_metrics"), exist_ok=True)
+os.makedirs(os.path.join(f'NQS-Bench-101/all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs', "model_weights"), exist_ok=True)
 
 
 
-os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs', "curves"), exist_ok=True)
-os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs', "evaluation_metrics"), exist_ok=True)
-os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs', "model_weights"), exist_ok=True)
+os.makedirs(os.path.join(f'NQS-Bench-101/all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs', "curves"), exist_ok=True)
+os.makedirs(os.path.join(f'NQS-Bench-101/all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs', "evaluation_metrics"), exist_ok=True)
+os.makedirs(os.path.join(f'NQS-Bench-101/all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs', "model_weights"), exist_ok=True)
 
-os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs', "curves"), exist_ok=True)
-os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs', "evaluation_metrics"), exist_ok=True)
-os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs', "model_weights"), exist_ok=True)
+os.makedirs(os.path.join(f'NQS-Bench-101/all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs', "curves"), exist_ok=True)
+os.makedirs(os.path.join(f'NQS-Bench-101/all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs', "evaluation_metrics"), exist_ok=True)
+os.makedirs(os.path.join(f'NQS-Bench-101/all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs', "model_weights"), exist_ok=True)
 
-os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs', "curves"), exist_ok=True)
-os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs', "evaluation_metrics"), exist_ok=True)
-os.makedirs(os.path.join(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs', "model_weights"), exist_ok=True)
+os.makedirs(os.path.join(f'NQS-Bench-101/all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs', "curves"), exist_ok=True)
+os.makedirs(os.path.join(f'NQS-Bench-101/all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs', "evaluation_metrics"), exist_ok=True)
+os.makedirs(os.path.join(f'NQS-Bench-101/all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs', "model_weights"), exist_ok=True)
 '''
 save_path_loss_curve = None
 save_path_pred_true = None
@@ -162,11 +159,11 @@ save_path_pred_true_html = None
 
 csv_file_path = None
 
-f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\model_weights'
-model_weights_h0_5_path = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\model_weights\\model_weights_h0_5.pth"
-model_weights_h1_0_path = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\model_weights\\model_weights_h1_0.pth"
-model_weights_h2_0_path = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\model_weights\\model_weights_h2_0.pth"
-model_weights_h1_0e6_path = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\model_weights\\model_weights_h1_0e6.pth"
+f'all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/model_weights'
+model_weights_h0_5_path = f"all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/model_weights/model_weights_h0_5.pth"
+model_weights_h1_0_path = f"all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/model_weights/model_weights_h1_0.pth"
+model_weights_h2_0_path = f"all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/model_weights/model_weights_h2_0.pth"
+model_weights_h1_0e6_path = f"all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/model_weights/model_weights_h1_0e6.pth"
 
 
 '''
@@ -303,18 +300,23 @@ graph2.update_layout(
 
 
 if int(trained_regimes[0]):
-    save_path_loss_curve = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\loss_curve.png"
-    save_path_pred_true = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\pred_true_curve.png"
+    save_path_loss_curve = f"all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/loss_curve.png"
+    save_path_pred_true = f"all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/pred_true_curve.png"
 
-    save_path_loss_curve_html = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\loss_curve.html"
-    save_path_pred_true_html = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\pred_true_curve.html"
-    save_path_infidelity_regimes = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\infidelity_regimes.png"
+    save_path_loss_curve_html = f"all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/loss_curve.html"
+    save_path_pred_true_html = f"all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/pred_true_curve.html"
+    save_path_infidelity_regimes = f"all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/infidelity_regimes.png"
 
-    csv_file_path = f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\metrics.csv'
+    csv_file_path = f'all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/metrics.csv'
     
     avg_test_loss_h1_0e6, amplitudes_h1_0e6, target_test_h1_0e6, pred_test_h1_0e6 = test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)
     avg_train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
     avg_valid_loss_h1_0e6, target_valid_h1_0e6, pred_valid_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
+
+    print(f"avg_train_loss_h1_0e6: {avg_train_loss_h1_0e6}")
+    print(f"target_train_h1_0e6: {target_train_h1_0e6}")
+    print(f"pred_train_h1_0e6: {pred_train_h1_0e6}")
+
     #perfect_prediction_x = [0,max(max(y_true_h1_0e6), max(y_pred_h1_0e6))]
     dict_optimizer_h1_0e6 = optimizer_h1_0e6.param_groups[0]
     dict_optimizer_h1_0e6.pop('params')
@@ -322,19 +324,28 @@ if int(trained_regimes[0]):
     total_params = sum(p.numel() for p in model_h1_0e6.parameters())
     train_params = sum(p.numel() for p in model_h1_0e6.parameters() if p.requires_grad)
     
-    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\pred_test_h1_0e6.txt', 'w') as file:
+    with open(f'all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/pred_test_h1_0e6.txt', 'w') as file:
         # Join the list elements into a single string with a newline character
         #print(f"pred_test_h1_0e6.tolist(): {pred_test_h1_0e6.tolist()}")
+        print(f"len pred_test_h1_0e6: {len(pred_test_h1_0e6)}")
+        all_hilbert = np.concatenate((pred_test_h1_0e6, pred_train_h1_0e6, pred_valid_h1_0e6), axis=None)
+        print(f"The size of Hilbert space is: {len(all_hilbert)}")
+        #all_hilbert_normalized = 
+        all_hilbert = [(np.abs(np.exp(x))) for x in all_hilbert]
+        all_hilbert = [x / np.sum(all_hilbert) for x in all_hilbert]
+        all_hilbert = sum(all_hilbert)
+
+        print(f"The sum of normalized pred amplitudes is: {all_hilbert}")
         data_to_write = '\n'.join([str(x.tolist()) for x in pred_test_h1_0e6])
         # Write the data to the file
         file.write(data_to_write)
         
-    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\target_test_h1_0e6.txt', 'w') as file:
+    with open(f'all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/target_test_h1_0e6.txt', 'w') as file:
         # Join the list elements into a single string with a newline character
         data_to_write = '\n'.join([str(x.tolist()) for x in target_test_h1_0e6])
         # Write the data to the file
         file.write(data_to_write)
-    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0e6\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\input_amplitudes_h1_0e6.txt', 'w') as file:
+    with open(f'all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/input_amplitudes_h1_0e6.txt', 'w') as file:
         # Join the list elements into a single string with a newline character
         #print(f"amplitudes_h1_0e6 data type: {type(amplitudes_h1_0e6)}")
         str_confs = []
@@ -344,14 +355,14 @@ if int(trained_regimes[0]):
                 int_conf = [str(int(z)) for z in y]
                 conf_str = "".join(int_conf)
                 str_confs.append(conf_str)
-                print(conf_str)
+                #print(conf_str)
         data_to_write = '\n'.join(str_confs)
         # Write the data to the file
         file.write(data_to_write)
     
 
     
-    
+    print(f"Target valid and pred valid: {target_valid_h1_0e6, pred_valid_h1_0e6}")
     #ax1 = f1.add_axes(train_losses_h1_0e6)
     df_metrics_h1_0e6 = metrics_data.copy()
     df_metrics_h1_0e6['regime'] = "h=1.0⁻⁶"
@@ -427,7 +438,7 @@ if int(trained_regimes[0]):
     
     #ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y = x (perfect prediction)", linewidth=0.5, color='cyan')
     #graph = go.Figure()
-    graph.add_trace(go.Scatter(x=target_test_h1_0e6, y=pred_test_h1_0e6, mode='markers', name="h=0.5", opacity=0.5))
+    graph.add_trace(go.Scatter(x=target_test_h1_0e6, y=pred_test_h1_0e6, mode='markers', name="h=1.0⁻⁶", opacity=0.5))
     
     
     #graph.show()
@@ -448,14 +459,14 @@ if int(trained_regimes[0]):
 
 if int(trained_regimes[1]):
     
-    save_path_loss_curve = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\loss_curve.png"
-    save_path_pred_true = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\pred_true_curve.png"
+    save_path_loss_curve = f"all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/loss_curve.png"
+    save_path_pred_true = f"all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/pred_true_curve.png"
 
-    save_path_loss_curve_html = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\loss_curve.html"
-    save_path_pred_true_html = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\pred_true_curve.html"
-    save_path_infidelity_regimes = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\infidelity_regimes.png"
+    save_path_loss_curve_html = f"all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/loss_curve.html"
+    save_path_pred_true_html = f"all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/pred_true_curve.html"
+    save_path_infidelity_regimes = f"all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/infidelity_regimes.png"
 
-    csv_file_path = f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\metrics.csv'
+    csv_file_path = f'all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/metrics.csv'
     
     avg_test_loss_h0_5, amplitudes_h0_5, target_test_h0_5, pred_test_h0_5 = test(test_dataloader_h0_5, model_h0_5, loss_fn)
     avg_train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5)
@@ -467,19 +478,19 @@ if int(trained_regimes[1]):
     total_params = sum(p.numel() for p in model_h0_5.parameters())
     train_params = sum(p.numel() for p in model_h0_5.parameters() if p.requires_grad)
     
-    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\pred_test_h0_5.txt', 'w') as file:
+    with open(f'all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/pred_test_h0_5.txt', 'w') as file:
         # Join the list elements into a single string with a newline character
         #print(f"pred_test_h0_5.tolist(): {pred_test_h0_5.tolist()}")
         data_to_write = '\n'.join([str(x.tolist()) for x in pred_test_h0_5])
         # Write the data to the file
         file.write(data_to_write)
         
-    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\target_test_h0_5.txt', 'w') as file:
+    with open(f'all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/target_test_h0_5.txt', 'w') as file:
         # Join the list elements into a single string with a newline character
         data_to_write = '\n'.join([str(x.tolist()) for x in target_test_h0_5])
         # Write the data to the file
         file.write(data_to_write)
-    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_0_5\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\input_amplitudes_h0_5.txt', 'w') as file:
+    with open(f'all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/input_amplitudes_h0_5.txt', 'w') as file:
         # Join the list elements into a single string with a newline character
         #print(f"amplitudes_h0_5 data type: {type(amplitudes_h0_5)}")
         str_confs = []
@@ -489,7 +500,7 @@ if int(trained_regimes[1]):
                 int_conf = [str(int(z)) for z in y]
                 conf_str = "".join(int_conf)
                 str_confs.append(conf_str)
-                print(conf_str)
+                #print(conf_str)
         data_to_write = '\n'.join(str_confs)
         # Write the data to the file
         file.write(data_to_write)
@@ -537,7 +548,8 @@ if int(trained_regimes[1]):
     df_metrics_h0_5["hellinger_dist_train"] = np.round(hellinger_distance(target_train_h0_5, pred_train_h0_5),decimals=DECIMAL_PLACES_METRICS)
     
     df_metrics_h0_5['infidelity'] = round(infidelity(np.concatenate((target_test_h0_5, target_train_h0_5, target_valid_h0_5), axis=None), np.concatenate((pred_test_h0_5, pred_train_h0_5, pred_valid_h0_5), axis=None)), DECIMAL_PLACES_METRICS)
-     
+
+        
     
     #df_metrics_h0_5["RMSE"] = round(root_mean_squared_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
     #df_metrics_h0_5["MAPE"] = round(mean_absolute_percentage_error(y_true_h0_5, y_pred_h0_5),DECIMAL_PLACES_METRICS)
@@ -559,7 +571,7 @@ if int(trained_regimes[1]):
     hell_dist = hellinger_distance(y_pred_h0_5, y_true_h0_5)
         
     '''
-    plot_metrics = "\n"+r"$R^2$"+f"={round(r2_score(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}, MSE={round(mean_squared_error(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}, MAE={round(mean_absolute_error(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}" 
+    plot_metrics = "\n"+r"$R^2$"+f"={round(r2_score(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}, MSE={round(mean_squared_error(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}, MAE={round(mean_absolute_error(target_test_h0_5, pred_test_h0_5),DECIMAL_PLACES_METRICS)}"
     plot_title = r"(NQS-Bench-101): True vs. Predicted $\log\psi_\omega(\vec{\sigma})$"
     ax1.set_title(plot_title + plot_metrics)
     ax2.plot(train_losses_h0_5, label="Train loss (h=0.5)")
@@ -591,20 +603,15 @@ if int(trained_regimes[1]):
     
     
     
-    
-    #f1.savefig(save_path_pred_true, dpi=300, bbox_inches="tight")
-    
-    
-    
 if int(trained_regimes[2]):
-    save_path_loss_curve = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\loss_curve.png"
-    save_path_pred_true = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\pred_true_curve.png"
+    save_path_loss_curve = f"all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/loss_curve.png"
+    save_path_pred_true = f"all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/pred_true_curve.png"
 
-    save_path_loss_curve_html = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\loss_curve.html"
-    save_path_pred_true_html = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\pred_true_curve.html"
-    save_path_infidelity_regimes = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\infidelity_regimes.png"
+    save_path_loss_curve_html = f"all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/loss_curve.html"
+    save_path_pred_true_html = f"all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/pred_true_curve.html"
+    save_path_infidelity_regimes = f"all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/infidelity_regimes.png"
 
-    csv_file_path = f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\metrics.csv'
+    csv_file_path = f'all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/metrics.csv'
     
     avg_test_loss_h1_0, amplitudes_h1_0, target_test_h1_0, pred_test_h1_0 = test(test_dataloader_h1_0, model_h1_0, loss_fn)
     avg_train_loss_h1_0, target_train_h1_0, pred_train_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0)
@@ -616,19 +623,19 @@ if int(trained_regimes[2]):
     total_params = sum(p.numel() for p in model_h1_0.parameters())
     train_params = sum(p.numel() for p in model_h1_0.parameters() if p.requires_grad)
     
-    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\pred_test_h1_0.txt', 'w') as file:
+    with open(f'all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/pred_test_h1_0.txt', 'w') as file:
         # Join the list elements into a single string with a newline character
         #print(f"pred_test_h1_0.tolist(): {pred_test_h1_0.tolist()}")
         data_to_write = '\n'.join([str(x.tolist()) for x in pred_test_h1_0])
         # Write the data to the file
         file.write(data_to_write)
         
-    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\target_test_h1_0.txt', 'w') as file:
+    with open(f'all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/target_test_h1_0.txt', 'w') as file:
         # Join the list elements into a single string with a newline character
         data_to_write = '\n'.join([str(x.tolist()) for x in target_test_h1_0])
         # Write the data to the file
         file.write(data_to_write)
-    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_1_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\input_amplitudes_h1_0.txt', 'w') as file:
+    with open(f'all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/input_amplitudes_h1_0.txt', 'w') as file:
         # Join the list elements into a single string with a newline character
         #print(f"amplitudes_h1_0 data type: {type(amplitudes_h1_0)}")
         str_confs = []
@@ -638,7 +645,7 @@ if int(trained_regimes[2]):
                 int_conf = [str(int(z)) for z in y]
                 conf_str = "".join(int_conf)
                 str_confs.append(conf_str)
-                print(conf_str)
+                #print(conf_str)
         data_to_write = '\n'.join(str_confs)
         # Write the data to the file
         file.write(data_to_write)
@@ -685,9 +692,7 @@ if int(trained_regimes[2]):
     df_metrics_h1_0["hellinger_dist_test"] = np.round(hellinger_distance(target_test_h1_0, pred_test_h1_0),decimals=DECIMAL_PLACES_METRICS)
     df_metrics_h1_0["hellinger_dist_train"] = np.round(hellinger_distance(target_train_h1_0, pred_train_h1_0),decimals=DECIMAL_PLACES_METRICS)
     
-    
     df_metrics_h1_0['infidelity'] = round(infidelity(np.concatenate((target_test_h1_0, target_train_h1_0, target_valid_h1_0), axis=None), np.concatenate((pred_test_h1_0, pred_train_h1_0, pred_valid_h1_0), axis=None)), DECIMAL_PLACES_METRICS)
-
 
         
     
@@ -723,7 +728,7 @@ if int(trained_regimes[2]):
     
     #ax1.plot(perfect_prediction_x, perfect_prediction_x, '-', label="y = x (perfect prediction)", linewidth=0.5, color='cyan')
     #graph = go.Figure()
-    graph.add_trace(go.Scatter(x=target_test_h1_0, y=pred_test_h1_0, mode='markers', name="h=0.5", opacity=0.5))
+    graph.add_trace(go.Scatter(x=target_test_h1_0, y=pred_test_h1_0, mode='markers', name="h=1.0", opacity=0.5))
     
     
     #graph.show()
@@ -742,14 +747,14 @@ if int(trained_regimes[2]):
         list(pred_test_h1_0))
     
 if int(trained_regimes[3]):
-    save_path_loss_curve = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\loss_curve.png"
-    save_path_pred_true = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\pred_true_curve.png"
+    save_path_loss_curve = f"all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/loss_curve.png"
+    save_path_pred_true = f"all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/pred_true_curve.png"
 
-    save_path_loss_curve_html = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\loss_curve.html"
-    save_path_pred_true_html = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\pred_true_curve.html"
-    save_path_infidelity_regimes = f"NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\curves\\infidelity_regimes.png"
+    save_path_loss_curve_html = f"all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/loss_curve.html"
+    save_path_pred_true_html = f"all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/pred_true_curve.html"
+    save_path_infidelity_regimes = f"all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/curves/infidelity_regimes.png"
 
-    csv_file_path = f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\metrics.csv'
+    csv_file_path = f'all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/metrics.csv'
     
     avg_test_loss_h2_0, amplitudes_h2_0, target_test_h2_0, pred_test_h2_0 = test(test_dataloader_h2_0, model_h2_0, loss_fn)
     avg_train_loss_h2_0, target_train_h2_0, pred_train_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0)
@@ -761,19 +766,19 @@ if int(trained_regimes[3]):
     total_params = sum(p.numel() for p in model_h2_0.parameters())
     train_params = sum(p.numel() for p in model_h2_0.parameters() if p.requires_grad)
     
-    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\pred_test_h2_0.txt', 'w') as file:
+    with open(f'all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/pred_test_h2_0.txt', 'w') as file:
         # Join the list elements into a single string with a newline character
         #print(f"pred_test_h2_0.tolist(): {pred_test_h2_0.tolist()}")
         data_to_write = '\n'.join([str(x.tolist()) for x in pred_test_h2_0])
         # Write the data to the file
         file.write(data_to_write)
         
-    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\target_test_h2_0.txt', 'w') as file:
+    with open(f'all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/target_test_h2_0.txt', 'w') as file:
         # Join the list elements into a single string with a newline character
         data_to_write = '\n'.join([str(x.tolist()) for x in target_test_h2_0])
         # Write the data to the file
         file.write(data_to_write)
-    with open(f'NQS-Bench-101\\all_architectures\\{timestamp}\\h_2_0\\{EPOCHS}_epochs\\{HIDDEN_LAYERS}_hidden_layers\\{activation}\\evaluation_metrics\\input_amplitudes_h2_0.txt', 'w') as file:
+    with open(f'all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/evaluation_metrics/input_amplitudes_h2_0.txt', 'w') as file:
         # Join the list elements into a single string with a newline character
         #print(f"amplitudes_h2_0 data type: {type(amplitudes_h2_0)}")
         str_confs = []
@@ -783,7 +788,7 @@ if int(trained_regimes[3]):
                 int_conf = [str(int(z)) for z in y]
                 conf_str = "".join(int_conf)
                 str_confs.append(conf_str)
-                print(conf_str)
+                #print(conf_str)
         data_to_write = '\n'.join(str_confs)
         # Write the data to the file
         file.write(data_to_write)
@@ -830,8 +835,8 @@ if int(trained_regimes[3]):
     df_metrics_h2_0["hellinger_dist_test"] = np.round(hellinger_distance(target_test_h2_0, pred_test_h2_0),decimals=DECIMAL_PLACES_METRICS)
     df_metrics_h2_0["hellinger_dist_train"] = np.round(hellinger_distance(target_train_h2_0, pred_train_h2_0),decimals=DECIMAL_PLACES_METRICS)
     
-    print(f"types target_test_h2_0 and target_train_h2_0: {type(target_test_h2_0)}, {type(target_train_h2_0)}")
     df_metrics_h2_0['infidelity'] = round(infidelity(np.concatenate((target_test_h2_0, target_train_h2_0, target_valid_h2_0), axis=None), np.concatenate((pred_test_h2_0, pred_train_h2_0, pred_valid_h2_0), axis=None)), DECIMAL_PLACES_METRICS)
+
         
     
     #df_metrics_h2_0["RMSE"] = round(root_mean_squared_error(y_true_h2_0, y_pred_h2_0),DECIMAL_PLACES_METRICS)
@@ -854,7 +859,7 @@ if int(trained_regimes[3]):
     hell_dist = hellinger_distance(y_pred_h2_0, y_true_h2_0)
         
     '''
-    plot_metrics = "\n"+r"$R^2$"+f"={round(r2_score(target_test_h2_0, pred_test_h2_0),DECIMAL_PLACES_METRICS)}, MSE={round(mean_squared_error(target_test_h2_0, pred_test_h2_0),DECIMAL_PLACES_METRICS)}, MAE={round(mean_absolute_error(target_test_h2_0, pred_test_h2_0),DECIMAL_PLACES_METRICS)}" 
+    plot_metrics = "\n"+r"$R^2$"+f"={round(r2_score(target_test_h2_0, pred_test_h2_0),DECIMAL_PLACES_METRICS)}, MSE={round(mean_squared_error(target_test_h2_0, pred_test_h2_0),DECIMAL_PLACES_METRICS)}, MAE={round(mean_absolute_error(target_test_h2_0, pred_test_h2_0),DECIMAL_PLACES_METRICS)}"
     plot_title = r"(NQS-Bench-101): True vs. Predicted $\log\psi_\omega(\vec{\sigma})$"
     ax1.set_title(plot_title + plot_metrics)
     ax2.plot(train_losses_h2_0, label="Train loss (h=2.0)")
@@ -912,4 +917,4 @@ graph.write_html(save_path_pred_true_html)
 graph2.write_html(save_path_loss_curve_html)
 
 df_metrics_all.to_csv(csv_file_path, index=False)
-global_metrics_dataframe.to_csv('NQS-Bench-101\\all_architectures_metrics\\all_architectures_metrics.csv', index=False)
+global_metrics_dataframe.to_csv('all_architectures_metrics/all_architectures_metrics.csv', index=False)
