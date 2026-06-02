@@ -7,9 +7,10 @@ import pandas as pd
 from torch.utils.data import random_split
 
 from config import device
-TRANS_STEPS = 1_000
+TRANS_STEPS = 10
 
-def train(dataloader, model, loss_fn, optimizer, epoch, scheduler):
+
+def train(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
     model.train()
     total_loss = 0.0
@@ -32,9 +33,10 @@ def train(dataloader, model, loss_fn, optimizer, epoch, scheduler):
         losses.append(loss)
 
         # Backpropagation
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        optimizer.zero_grad()
+        
         
         total_loss += loss.item()
 
@@ -42,8 +44,7 @@ def train(dataloader, model, loss_fn, optimizer, epoch, scheduler):
             loss, current = loss.item(), (batch + 1) * len(X)
             print(f"Training loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
-        if (epoch + 1) % TRANS_STEPS == 0:
-            scheduler.step()
+        
     
     target_points, pred_points = torch.cat(target_points).flatten().cpu().numpy(), torch.cat(pred_points).detach().cpu().numpy()
     losses = [loss.item() for loss in losses]
