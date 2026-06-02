@@ -5,14 +5,15 @@ from datetime import datetime
 import itertools
 from tqdm import tqdm
 
-epoch_range = [300,500]
+epoch_range = [10, 20]
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 
-regimes_combinations = ["0100"]
-hidden_layers_range = range(0,1)
+regimes_combinations = ["1111"]
+hidden_layers_range = range(1,3)
 act_functions_range = range(0,1)
+widths_range = [16,32]
 
 
 
@@ -29,7 +30,7 @@ for regim_comb in regimes_combinations:
     print(f"Current regime: {regim_comb}")
     env = os.environ.copy()
     env["trained_regimes"] = regim_comb
-    env["timestamp"] = timestamp
+    env["TIMESTAMP"] = timestamp
     
     for n_epoch in epoch_range:
         print(f"Number of epochs: {n_epoch}")
@@ -42,11 +43,15 @@ for regim_comb in regimes_combinations:
             for act_fn in act_functions_range:
                 print(f"Activation function: {act_fn}")
                 env["ACT_FUNCTION"] = str(act_fn)
+
+                for width in widths_range:
+                    print(f"Current width (W): {width}")
+                    env["W"] = str(width)
                 
-                subprocess.run(
-                    ['python', 'NQS-Bench-101/code/generating_all_architectures.py'],
-                    env=env
-                )
+                    subprocess.run(
+                        ['python', 'code/generating_all_architectures.py'],
+                        env=env
+                    )
 
 '''
 for n_epoch in epoch_range:
