@@ -81,9 +81,9 @@ def get_optimizer_and_scheduler(model, width=W, threshold=432):
     LR_INIT = 1e-6 # warmup starting lr (large networks only)
     DECAY_RATE = 0.99 # multiply lr by this every transition_steps
    
-    TRANS_STEPS = 1000 # how often decay is applied (in optimizer
+    TRANS_STEPS = 50 # how often decay is applied (in optimizer
   
-    WARMUP_STEPS = 10_000 # warmup duration (large networks only)
+    WARMUP_STEPS = 200 # warmup duration (large networks only)
     optimizer = torch.optim.Adam(model.parameters(), lr=LR_PEAK)
     if width < threshold:
         # --- small network: plain exponential decay ---
@@ -115,7 +115,7 @@ def get_optimizer_and_scheduler(model, width=W, threshold=432):
         )
     return optimizer, scheduler
 
-TRANS_STEPS = 1_000
+TRANS_STEPS = 50
 
 """
 Evaluation metrics (https://developer.nvidia.com/blog/a-comprehensive-overview-of-regression-evaluation-metrics/):
@@ -214,40 +214,53 @@ for t in tqdm(range(EPOCHS)):
     
     if int(trained_regimes[1]):
         print("Losses for h=0.5:\n")
-        train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5, t, scheduler_h0_5)
+        train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5)
         valid_loss_h0_5, target_valid_h0_5, pred_valid_h0_5 = valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
         train_losses_h0_5.append(train_loss_h0_5)
         valid_losses_h0_5.append(valid_loss_h0_5)
+
+        if (t + 1) % TRANS_STEPS == 0 and EXPONENTIAL_LR:
+            scheduler_h0_5.step()
+            print(f"Current LR (h=0.5): {scheduler_h0_5.get_last_lr()}")
         #scheduler_h0_5.step() if EXPONENTIAL_LR else None
-        print(f"Last learning rate (h=0.5): {scheduler_h0_5.get_last_lr()}") if EXPONENTIAL_LR else None
+        
 
         
         
     if int(trained_regimes[2]):
         print("Losses for h=1.0:\n")
-        train_loss_h1_0, target_train_h1_0, pred_train_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0, t, scheduler_h1_0)
+        train_loss_h1_0, target_train_h1_0, pred_train_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0)
         valid_loss_h1_0, target_valid_h1_0, pred_valid_h1_0 = valid(valid_dataloader_h1_0, model_h1_0, loss_fn)
         train_losses_h1_0.append(train_loss_h1_0)
         valid_losses_h1_0.append(valid_loss_h1_0)
+        if (t + 1) % TRANS_STEPS == 0 and EXPONENTIAL_LR:
+            scheduler_h1_0.step()
+            print(f"Current LR (h=1.0): {scheduler_h1_0.get_last_lr()}")
         #scheduler_h1_0.step() if EXPONENTIAL_LR else None
-        print(f"Last learning rate (h=1.0): {scheduler_h1_0.get_last_lr()}") if EXPONENTIAL_LR else None
+        #print(f"Last learning rate (h=1.0): {scheduler_h1_0.get_last_lr()}") if EXPONENTIAL_LR else None
         
     if int(trained_regimes[3]):
         print("Losses for h=2.0:\n")
-        train_loss_h2_0, target_train_h2_0, pred_train_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0, t, scheduler_h2_0)
+        train_loss_h2_0, target_train_h2_0, pred_train_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0)
         valid_loss_h2_0, target_valid_h2_0, pred_valid_h2_0 = valid(valid_dataloader_h2_0, model_h2_0, loss_fn)
         train_losses_h2_0.append(train_loss_h2_0)
         valid_losses_h2_0.append(valid_loss_h2_0)
+        if (t + 1) % TRANS_STEPS == 0 and EXPONENTIAL_LR:
+            scheduler_h2_0.step()
+            print(f"Current LR (h=2.0): {scheduler_h2_0.get_last_lr()}")
         #scheduler_h2_0.step() if EXPONENTIAL_LR else None
-        print(f"Last learning rate (h=2.0): {scheduler_h2_0.get_last_lr()}") if EXPONENTIAL_LR else None
+        #print(f"Last learning rate (h=2.0): {scheduler_h2_0.get_last_lr()}") if EXPONENTIAL_LR else None
     if int(trained_regimes[0]):
-        print("Losses for h=1.0⁻⁶\n")
-        train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6, t, scheduler_h1_0e6)
+        print("Losses for h=10⁻⁶\n")
+        train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
         valid_loss_h1_0e6, target_valid_h1_0e6, pred_valid_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
         train_losses_h1_0e6.append(train_loss_h1_0e6)
         valid_losses_h1_0e6.append(valid_loss_h1_0e6) 
+        if (t + 1) % TRANS_STEPS == 0 and EXPONENTIAL_LR:
+            scheduler_h1_0e6.step()
+            print(f"Current LR (h=10⁻⁶): {scheduler_h1_0e6.get_last_lr()}")
         #scheduler_h1_0e6.step() if EXPONENTIAL_LR else None
-        print(f"Last learning rate (h=1.0⁻⁶): {scheduler_h1_0e6.get_last_lr()}") if EXPONENTIAL_LR else None
+        #print(f"Last learning rate (h=1.0⁻⁶): {scheduler_h1_0e6.get_last_lr()}") if EXPONENTIAL_LR else None
  
 end_training_time = time.time() 
 total_training_time = round(end_training_time - start_training_time, 2)
@@ -263,7 +276,7 @@ y_pred_h2_0, y_true_h2_0 = [], []
 
 if int(trained_regimes[1]):
     avg_test_loss_h0_5, _, target_test_h0_5, pred_test_h0_5 = test(test_dataloader_h0_5, model_h0_5, loss_fn)
-    avg_train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5, EPOCHS, scheduler_h0_5)
+    avg_train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5)
     avg_valid_loss_h0_5, target_valid_h0_5, pred_valid_h0_5 = valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
     
     #print(f"Loss on the test set (h=0.5): {avg_test_loss_h0_5}.\n")
@@ -299,7 +312,7 @@ if int(trained_regimes[1]):
     #print(f"The Hellinger distance between the two distributions is (h=0.5): {hellinger_distance(y_pred_h0_5, y_true_h0_5)}")
 if int(trained_regimes[2]):
     avg_test_loss_h1_0, _, target_test_h1_0, pred_test_h1_0 = test(test_dataloader_h1_0, model_h1_0, loss_fn)
-    avg_train_loss_h1_0, target_train_h1_0, pred_train_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0, EPOCHS, scheduler_h1_0)
+    avg_train_loss_h1_0, target_train_h1_0, pred_train_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0)
     avg_valid_loss_h1_0, target_valid_h1_0, pred_valid_h1_0 = valid(valid_dataloader_h1_0, model_h1_0, loss_fn)
     #size = len(dataloader_h1_0.dataset)
     #num_batches = len(dataloader_h1_0)
@@ -321,7 +334,7 @@ if int(trained_regimes[2]):
     '''
 if int(trained_regimes[3]):
     avg_test_loss_h2_0, _, target_test_h2_0, pred_test_h2_0 = test(test_dataloader_h2_0, model_h2_0, loss_fn)
-    avg_train_loss_h2_0, target_train_h2_0, pred_train_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0, EPOCHS, scheduler_h2_0)
+    avg_train_loss_h2_0, target_train_h2_0, pred_train_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0)
     avg_valid_loss_h2_0, target_valid_h2_0, pred_valid_h2_0 = valid(valid_dataloader_h2_0, model_h2_0, loss_fn)
     #print(f"Loss on the test set (h=2.0): {avg_test_loss_h2_0}.\n")
     #torch.save(model_h2_0.state_dict(), "saved_models\\model_h2_0.pth")
@@ -346,7 +359,7 @@ if int(trained_regimes[3]):
     '''
 if int(trained_regimes[0]):
     avg_test_loss_h1_0e6, _, target_test_h1_0e6, pred_test_h1_0e6 = test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)
-    avg_train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6, EPOCHS, scheduler_h1_0e6)
+    avg_train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
     avg_valid_loss_h1_0e6, target_valid_h1_0e6, pred_valid_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
 
     #print(f"Loss on the test set (h=1.0⁻⁶): {avg_test_loss_h1_0e6}.\n")
