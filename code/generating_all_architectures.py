@@ -98,7 +98,7 @@ try:
 except EmptyDataError:
     global_metrics_dataframe = pd.DataFrame()
 
-epoch_range = [10, 20]
+epoch_range = [500]
 
 print(f"Number of epochs: {EPOCHS}")
 timestamp = TIMESTAMP
@@ -108,7 +108,8 @@ str_regimes=["h_1_0e6", "h_0_5", "h_1_0", "h_2_0"]
 str_epochs = [f"{x}_epochs" for x in epoch_range]
 str_h_layers = ["1_hidden_layers", "2_hidden_layers", "3_hidden_layers"]
 str_act_fn = ["gelu", "tanh", "relu"]
-str_widths = ["width_16", "width_32"]
+str_widths = ["width_16", "width_32", "width_64", "width_128", "width_256", "width_512", "width_2048", "width_4096", "width_8192"]
+
 
 activation=None
 match int(ACT_FUNCTION):
@@ -452,7 +453,7 @@ if int(trained_regimes[0]):
     csv_file_path_h10e6 = f'all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/metrics.csv'
     
     avg_test_loss_h1_0e6, amplitudes_h1_0e6, target_test_h1_0e6, pred_test_h1_0e6 = test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)
-    avg_train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6, EPOCHS, scheduler_h1_0e6)
+    avg_train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
     avg_valid_loss_h1_0e6, target_valid_h1_0e6, pred_valid_h1_0e6 = valid(valid_dataloader_h1_0e6, model_h1_0e6, loss_fn)
 
     print(f"avg_train_loss_h1_0e6: {avg_train_loss_h1_0e6}")
@@ -615,7 +616,7 @@ if int(trained_regimes[1]):
     csv_file_path_h0_5 = f'all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/metrics.csv'
     
     avg_test_loss_h0_5, amplitudes_h0_5, target_test_h0_5, pred_test_h0_5 = test(test_dataloader_h0_5, model_h0_5, loss_fn)
-    avg_train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5, EPOCHS, scheduler_h0_5)
+    avg_train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5)
     avg_valid_loss_h0_5, target_valid_h0_5, pred_valid_h0_5 = valid(valid_dataloader_h0_5, model_h0_5, loss_fn)
 
     print(f"avg_train_loss_h0_5: {avg_train_loss_h0_5}")
@@ -777,7 +778,7 @@ if int(trained_regimes[2]):
     csv_file_path_h1_0 = f'all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/metrics.csv'
     
     avg_test_loss_h1_0, amplitudes_h1_0, target_test_h1_0, pred_test_h1_0 = test(test_dataloader_h1_0, model_h1_0, loss_fn)
-    avg_train_loss_h1_0, target_train_h1_0, pred_train_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0, EPOCHS, scheduler_h1_0)
+    avg_train_loss_h1_0, target_train_h1_0, pred_train_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0)
     avg_valid_loss_h1_0, target_valid_h1_0, pred_valid_h1_0 = valid(valid_dataloader_h1_0, model_h1_0, loss_fn)
 
     print(f"avg_train_loss_h1_0: {avg_train_loss_h1_0}")
@@ -937,7 +938,7 @@ if int(trained_regimes[3]):
     csv_file_path_h2_0 = f'all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/metrics.csv'
     
     avg_test_loss_h2_0, amplitudes_h2_0, target_test_h2_0, pred_test_h2_0 = test(test_dataloader_h2_0, model_h2_0, loss_fn)
-    avg_train_loss_h2_0, target_train_h2_0, pred_train_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0, EPOCHS, scheduler_h2_0)
+    avg_train_loss_h2_0, target_train_h2_0, pred_train_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0)
     avg_valid_loss_h2_0, target_valid_h2_0, pred_valid_h2_0 = valid(valid_dataloader_h2_0, model_h2_0, loss_fn)
 
     print(f"avg_train_loss_h2_0: {avg_train_loss_h2_0}")
