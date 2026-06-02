@@ -7,8 +7,9 @@ import pandas as pd
 from torch.utils.data import random_split
 
 from config import device
+TRANS_STEPS = 1_000
 
-def train(dataloader, model, loss_fn, optimizer):
+def train(dataloader, model, loss_fn, optimizer, epoch, scheduler):
     size = len(dataloader.dataset)
     model.train()
     total_loss = 0.0
@@ -40,8 +41,11 @@ def train(dataloader, model, loss_fn, optimizer):
         if batch % 100 == 0:
             loss, current = loss.item(), (batch + 1) * len(X)
             print(f"Training loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+
+        if (epoch + 1) % TRANS_STEPS == 0:
+            scheduler.step()
     
-    target_points, pred_points = torch.cat(target_points).flatten().numpy(), torch.cat(pred_points).detach().numpy()
+    target_points, pred_points = torch.cat(target_points).flatten().cpu().numpy(), torch.cat(pred_points).detach().cpu().numpy()
     losses = [loss.item() for loss in losses]
     #print(f"Train losses: {losses}")
     
