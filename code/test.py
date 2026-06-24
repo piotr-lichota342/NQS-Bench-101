@@ -30,5 +30,5 @@ def test(dataloader, model, loss_fn):
     #correct /= size
     #print(f"Avg loss: {test_loss:>8f} \n")
     #print(f"Test target points: {torch.cat(pred_points).flatten().numpy()}")
-    target_points, pred_points = torch.cat(target_points).flatten().numpy(), torch.cat(pred_points).flatten().numpy()
+    target_points, pred_points = torch.cat(target_points).flatten().cpu().numpy(), torch.cat(pred_points).flatten().cpu().numpy()
     return test_loss, input_amplitudes, target_points, pred_points
