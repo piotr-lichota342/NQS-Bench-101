@@ -6,9 +6,9 @@ from dataset_loading import train_dataloader_h0_5, train_dataloader_h1_0, train_
 from dataset_loading import test_dataloader_h0_5, test_dataloader_h1_0, test_dataloader_h2_0, test_dataloader_h1_0e6
 from dataset_loading import valid_dataloader_h0_5, valid_dataloader_h1_0, valid_dataloader_h2_0, valid_dataloader_h1_0e6
 from math import e
-from main import valid_losses_h1_0e6, valid_losses_h0_5, valid_losses_h1_0, valid_losses_h2_0, scheduler_h1_0e6, scheduler_h0_5, scheduler_h1_0, scheduler_h2_0
+from main import valid_losses_h1_0e6, valid_losses_h0_5, valid_losses_h1_0, valid_losses_h2_0
 from main import loss_fn, y_true_h1_0e6, y_pred_h1_0e6, y_true_h0_5, y_pred_h0_5, y_true_h1_0, y_pred_h1_0, y_true_h2_0, y_pred_h2_0, optimizer_h0_5, optimizer_h1_0, optimizer_h1_0e6, optimizer_h2_0, total_training_time
-from config import trained_regimes, EPOCHS, BATCH_SIZE, W, TEST_PROPORTION, TRAIN_PROPORTION, VALID_PROPORTION, HIDDEN_LAYERS, INPUT_SIZE, device, trained_regimes, DECIMAL_PLACES_METRICS, SAVING_WEIGHTS, TIMESTAMP, ACT_FUNCTION, DATASET_SIZE
+from config import CUSTOM_ARCH, EXPONENTIAL_LR, trained_regimes, EPOCHS, BATCH_SIZE, W, TEST_PROPORTION, TRAIN_PROPORTION, VALID_PROPORTION, HIDDEN_LAYERS, INPUT_SIZE, device, trained_regimes, DECIMAL_PLACES_METRICS, SAVING_WEIGHTS, TIMESTAMP, ACT_FUNCTION, DATASET_SIZE, WIDTH_SEQUENCE
 from torchinfo import summary
 from test import test
 from valid import valid
@@ -98,17 +98,25 @@ try:
 except EmptyDataError:
     global_metrics_dataframe = pd.DataFrame()
 
-epoch_range = [500]
 
+epoch_range = [500,1000]
 print(f"Number of epochs: {EPOCHS}")
 timestamp = TIMESTAMP
 print(f"The Timestamp inside generating_all_architectures: is: {timestamp}")
 
 str_regimes=["h_1_0e6", "h_0_5", "h_1_0", "h_2_0"]
 str_epochs = [f"{x}_epochs" for x in epoch_range]
-str_h_layers = ["1_hidden_layers", "2_hidden_layers", "3_hidden_layers"]
+if not CUSTOM_ARCH:
+    str_h_layers = ["1_hidden_layers", "2_hidden_layers", "3_hidden_layers"]
+    str_widths = ["width_16", "width_32", "width_64", "width_128", "width_256", "width_512", "width_2048", "width_4096", "width_8192"]
+else:
+    str_h_layers = ["custom_hidden_layers"]
+    str_widths = [f"width_{W}"]
+    #print(f"This is the form of with: width_{W}")
+
 str_act_fn = ["gelu", "tanh", "relu"]
-str_widths = ["width_16", "width_32", "width_64", "width_128", "width_256", "width_512", "width_2048", "width_4096", "width_8192"]
+# str_widths = ["width_1"]
+# ["width_16", "width_32", "width_64", "width_128", "width_256", "width_512", "width_2048", "width_4096", "width_8192"]
 
 
 activation=None
@@ -124,18 +132,18 @@ os.makedirs(os.path.join('all_architectures', f"{timestamp}"), exist_ok=True)
 
 for regim in str_regimes:
     os.makedirs(os.path.join(f'all_architectures/{timestamp}', regim), exist_ok=True)
-    for epoch in str_epochs:
-        os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}', epoch), exist_ok=True)
-        for hl in str_h_layers:
-            os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{epoch}', hl), exist_ok=True)
-            for af in str_act_fn:
-                os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{epoch}/{hl}', af), exist_ok=True)
-                for w in str_widths:
-                    os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{epoch}/{hl}/{af}', w), exist_ok=True)
-                
-                    os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{epoch}/{hl}/{af}/{w}', "curves"), exist_ok=True)
-                    os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{epoch}/{hl}/{af}/{w}', "evaluation_metrics"), exist_ok=True)
-                    os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{epoch}/{hl}/{af}/{w}', "model_weights"), exist_ok=True)
+    for hl in str_h_layers:
+        os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}', hl), exist_ok=True)
+        for af in str_act_fn:
+            os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{hl}', af), exist_ok=True)
+            for w in str_widths:
+                os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{hl}/{af}', w), exist_ok=True)
+                for epoch in str_epochs:
+                    os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{hl}/{af}/{w}', epoch), exist_ok=True)
+
+                    os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{hl}/{af}/{w}/{epoch}', "curves"), exist_ok=True)
+                    os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{hl}/{af}/{w}/{epoch}', "evaluation_metrics"), exist_ok=True)
+                    os.makedirs(os.path.join(f'all_architectures/{timestamp}/{regim}/{hl}/{af}/{w}/{epoch}', "model_weights"), exist_ok=True)
 
 '''
 os.makedirs(os.path.join(f'NQS-Bench-101/all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs', "curves"), exist_ok=True)
@@ -165,10 +173,10 @@ save_path_pred_true_html = None
 csv_file_path = None
 
 f'all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/model_weights'
-model_weights_h0_5_path = f"all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/model_weights/model_weights_h0_5.pth"
-model_weights_h1_0_path = f"all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/model_weights/model_weights_h1_0.pth"
-model_weights_h2_0_path = f"all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/model_weights/model_weights_h2_0.pth"
-model_weights_h1_0e6_path = f"all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/model_weights/model_weights_h1_0e6.pth"
+model_weights_h0_5_path = f"all_architectures/{timestamp}/h_0_5/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/model_weights/model_weights_h0_5.pth"
+model_weights_h1_0_path = f"all_architectures/{timestamp}/h_1_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/model_weights/model_weights_h1_0.pth"
+model_weights_h2_0_path = f"all_architectures/{timestamp}/h_2_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/model_weights/model_weights_h2_0.pth"
+model_weights_h1_0e6_path = f"all_architectures/{timestamp}/h_1_0e6/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/model_weights/model_weights_h1_0e6.pth"
 
 
 '''
@@ -213,6 +221,7 @@ metrics_data = {
     'input_size': INPUT_SIZE,
     'batch_size': BATCH_SIZE,
     'network_width': W,
+    'exponential_lr': EXPONENTIAL_LR,
     'hidden_layers': HIDDEN_LAYERS,
     'activation_fn': activation,
     'train_proportion': TRAIN_PROPORTION,
@@ -222,6 +231,7 @@ metrics_data = {
     'optimizer_name': None, # optimizer_h0_5.__class__.__name__
     'optimizer_params': None, # str(dict_optimizer)
     'loss_fn': str(loss_fn.__class__.__name__),
+    'custom_arch': CUSTOM_ARCH,
     #'bias': None,
     #'avr_res': None,
     #'MBE': None,
@@ -443,14 +453,14 @@ graph2_h2_0.update_layout(
 
 
 if int(trained_regimes[0]):
-    save_path_loss_curve_h10e6 = f"all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/loss_curve.png"
-    save_path_pred_true_h10e6 = f"all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/pred_true_curve.png"
+    save_path_loss_curve_h10e6 = f"all_architectures/{timestamp}/h_1_0e6/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/loss_curve.png"
+    save_path_pred_true_h10e6 = f"all_architectures/{timestamp}/h_1_0e6/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/pred_true_curve.png"
 
-    save_path_loss_curve_html_h10e6 = f"all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/loss_curve.html"
-    save_path_pred_true_html_h10e6 = f"all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/pred_true_curve.html"
-    save_path_infidelity_regimes_h10e6 = f"all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/infidelity_regimes.png"
+    save_path_loss_curve_html_h10e6 = f"all_architectures/{timestamp}/h_1_0e6/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/loss_curve.html"
+    save_path_pred_true_html_h10e6 = f"all_architectures/{timestamp}/h_1_0e6/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/pred_true_curve.html"
+    save_path_infidelity_regimes_h10e6 = f"all_architectures/{timestamp}/h_1_0e6/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/infidelity_regimes.png"
 
-    csv_file_path_h10e6 = f'all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/metrics.csv'
+    csv_file_path_h10e6 = f'all_architectures/{timestamp}/h_1_0e6/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/metrics.csv'
     
     avg_test_loss_h1_0e6, amplitudes_h1_0e6, target_test_h1_0e6, pred_test_h1_0e6 = test(test_dataloader_h1_0e6, model_h1_0e6, loss_fn)
     avg_train_loss_h1_0e6, target_train_h1_0e6, pred_train_h1_0e6 = train(train_dataloader_h1_0e6, model_h1_0e6, loss_fn, optimizer_h1_0e6)
@@ -467,7 +477,7 @@ if int(trained_regimes[0]):
     total_params_h10e6 = sum(p_h1_0e6.numel() for p_h1_0e6 in model_h1_0e6.parameters())
     train_params_h10e6 = sum(p_h1_0e6.numel() for p_h1_0e6 in model_h1_0e6.parameters() if p_h1_0e6.requires_grad)
     
-    with open(f'all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/pred_test_h1_0e6.txt', 'w') as file_h10e6:
+    with open(f'all_architectures/{timestamp}/h_1_0e6/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/pred_test_h1_0e6.txt', 'w') as file_h10e6:
         # Join the list elements into a single string with a newline character
         #print(f"pred_test_h1_0e6.tolist(): {pred_test_h1_0e6.tolist()}")
         print(f"len pred_test_h1_0e6: {len(pred_test_h1_0e6)}")
@@ -483,12 +493,12 @@ if int(trained_regimes[0]):
         # Write the data to the file
         file_h10e6.write(data_to_write_h10e6)
         
-    with open(f'all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/target_test_h1_0e6.txt', 'w') as file_h10e6:
+    with open(f'all_architectures/{timestamp}/h_1_0e6/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/target_test_h1_0e6.txt', 'w') as file_h10e6:
         # Join the list elements into a single string with a newline character
         data_to_write_h10e6 = '\n'.join([str(x_h1_0e6.tolist()) for x_h1_0e6 in target_test_h1_0e6])
         # Write the data to the file
         file_h10e6.write(data_to_write_h10e6)
-    with open(f'all_architectures/{timestamp}/h_1_0e6/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/input_amplitudes_h1_0e6.txt', 'w') as file_h10e6:
+    with open(f'all_architectures/{timestamp}/h_1_0e6/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/input_amplitudes_h1_0e6.txt', 'w') as file_h10e6:
         # Join the list elements into a single string with a newline character
         #print(f"amplitudes_h1_0e6 data type: {type(amplitudes_h1_0e6)}")
         str_confs_h10e6 = []
@@ -606,14 +616,14 @@ if int(trained_regimes[0]):
 
 if int(trained_regimes[1]):
     
-    save_path_loss_curve_h0_5 = f"all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/loss_curve.png"
-    save_path_pred_true_h0_5 = f"all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/pred_true_curve.png"
+    save_path_loss_curve_h0_5 = f"all_architectures/{timestamp}/h_0_5/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/loss_curve.png"
+    save_path_pred_true_h0_5 = f"all_architectures/{timestamp}/h_0_5/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/pred_true_curve.png"
 
-    save_path_loss_curve_html_h0_5 = f"all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/loss_curve.html"
-    save_path_pred_true_html_h0_5 = f"all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/pred_true_curve.html"
-    save_path_infidelity_regimes_h0_5 = f"all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/infidelity_regimes.png"
+    save_path_loss_curve_html_h0_5 = f"all_architectures/{timestamp}/h_0_5/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/loss_curve.html"
+    save_path_pred_true_html_h0_5 = f"all_architectures/{timestamp}/h_0_5/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/pred_true_curve.html"
+    save_path_infidelity_regimes_h0_5 = f"all_architectures/{timestamp}/h_0_5/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/infidelity_regimes.png"
 
-    csv_file_path_h0_5 = f'all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/metrics.csv'
+    csv_file_path_h0_5 = f'all_architectures/{timestamp}/h_0_5/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/metrics.csv'
     
     avg_test_loss_h0_5, amplitudes_h0_5, target_test_h0_5, pred_test_h0_5 = test(test_dataloader_h0_5, model_h0_5, loss_fn)
     avg_train_loss_h0_5, target_train_h0_5, pred_train_h0_5 = train(train_dataloader_h0_5, model_h0_5, loss_fn, optimizer_h0_5)
@@ -630,7 +640,7 @@ if int(trained_regimes[1]):
     total_params_h0_5 = sum(p_h0_5.numel() for p_h0_5 in model_h0_5.parameters())
     train_params_h0_5 = sum(p_h0_5.numel() for p_h0_5 in model_h0_5.parameters() if p_h0_5.requires_grad)
     
-    with open(f'all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/pred_test_h0_5.txt', 'w') as file_h0_5:
+    with open(f'all_architectures/{timestamp}/h_0_5/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/pred_test_h0_5.txt', 'w') as file_h0_5:
         # Join the list elements into a single string with a newline character
         #print(f"pred_test_h0_5.tolist(): {pred_test_h0_5.tolist()}")
         print(f"len pred_test_h0_5: {len(pred_test_h0_5)}")
@@ -646,12 +656,12 @@ if int(trained_regimes[1]):
         # Write the data to the file
         file_h0_5.write(data_to_write_h0_5)
         
-    with open(f'all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/target_test_h0_5.txt', 'w') as file_h0_5:
+    with open(f'all_architectures/{timestamp}/h_0_5/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/target_test_h0_5.txt', 'w') as file_h0_5:
         # Join the list elements into a single string with a newline character
         data_to_write_h0_5 = '\n'.join([str(x_h0_5.tolist()) for x_h0_5 in target_test_h0_5])
         # Write the data to the file
         file_h0_5.write(data_to_write_h0_5)
-    with open(f'all_architectures/{timestamp}/h_0_5/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/input_amplitudes_h0_5.txt', 'w') as file_h0_5:
+    with open(f'all_architectures/{timestamp}/h_0_5/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/input_amplitudes_h0_5.txt', 'w') as file_h0_5:
         # Join the list elements into a single string with a newline character
         #print(f"amplitudes_h0_5 data type: {type(amplitudes_h0_5)}")
         str_confs_h0_5 = []
@@ -768,14 +778,14 @@ if int(trained_regimes[1]):
     
     
 if int(trained_regimes[2]):
-    save_path_loss_curve_h1_0 = f"all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/loss_curve.png"
-    save_path_pred_true_h1_0 = f"all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/pred_true_curve.png"
+    save_path_loss_curve_h1_0 = f"all_architectures/{timestamp}/h_1_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/loss_curve.png"
+    save_path_pred_true_h1_0 = f"all_architectures/{timestamp}/h_1_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/pred_true_curve.png"
 
-    save_path_loss_curve_html_h1_0 = f"all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/loss_curve.html"
-    save_path_pred_true_html_h1_0 = f"all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/pred_true_curve.html"
-    save_path_infidelity_regimes_h1_0 = f"all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/infidelity_regimes.png"
+    save_path_loss_curve_html_h1_0 = f"all_architectures/{timestamp}/h_1_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/loss_curve.html"
+    save_path_pred_true_html_h1_0 = f"all_architectures/{timestamp}/h_1_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/pred_true_curve.html"
+    save_path_infidelity_regimes_h1_0 = f"all_architectures/{timestamp}/h_1_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/infidelity_regimes.png"
 
-    csv_file_path_h1_0 = f'all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/metrics.csv'
+    csv_file_path_h1_0 = f'all_architectures/{timestamp}/h_1_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/metrics.csv'
     
     avg_test_loss_h1_0, amplitudes_h1_0, target_test_h1_0, pred_test_h1_0 = test(test_dataloader_h1_0, model_h1_0, loss_fn)
     avg_train_loss_h1_0, target_train_h1_0, pred_train_h1_0 = train(train_dataloader_h1_0, model_h1_0, loss_fn, optimizer_h1_0)
@@ -792,7 +802,7 @@ if int(trained_regimes[2]):
     total_params_h1_0 = sum(p_h1_0.numel() for p_h1_0 in model_h1_0.parameters())
     train_params_h1_0 = sum(p_h1_0.numel() for p_h1_0 in model_h1_0.parameters() if p_h1_0.requires_grad)
     
-    with open(f'all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/pred_test_h1_0.txt', 'w') as file_h1_0:
+    with open(f'all_architectures/{timestamp}/h_1_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/pred_test_h1_0.txt', 'w') as file_h1_0:
         # Join the list elements into a single string with a newline character
         #print(f"pred_test_h1_0.tolist(): {pred_test_h1_0.tolist()}")
         print(f"len pred_test_h1_0: {len(pred_test_h1_0)}")
@@ -808,12 +818,12 @@ if int(trained_regimes[2]):
         # Write the data to the file
         file_h1_0.write(data_to_write_h1_0)
         
-    with open(f'all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/target_test_h1_0.txt', 'w') as file_h1_0:
+    with open(f'all_architectures/{timestamp}/h_1_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/target_test_h1_0.txt', 'w') as file_h1_0:
         # Join the list elements into a single string with a newline character
         data_to_write_h1_0 = '\n'.join([str(x_h1_0.tolist()) for x_h1_0 in target_test_h1_0])
         # Write the data to the file
         file_h1_0.write(data_to_write_h1_0)
-    with open(f'all_architectures/{timestamp}/h_1_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/input_amplitudes_h1_0.txt', 'w') as file_h1_0:
+    with open(f'all_architectures/{timestamp}/h_1_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/input_amplitudes_h1_0.txt', 'w') as file_h1_0:
         # Join the list elements into a single string with a newline character
         #print(f"amplitudes_h1_0 data type: {type(amplitudes_h1_0)}")
         str_confs_h1_0 = []
@@ -928,14 +938,14 @@ if int(trained_regimes[2]):
     df_metrics_h1_0.to_csv(csv_file_path_h1_0, index=False)
     
 if int(trained_regimes[3]):
-    save_path_loss_curve_h2_0 = f"all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/loss_curve.png"
-    save_path_pred_true_h2_0 = f"all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/pred_true_curve.png"
+    save_path_loss_curve_h2_0 = f"all_architectures/{timestamp}/h_2_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/loss_curve.png"
+    save_path_pred_true_h2_0 = f"all_architectures/{timestamp}/h_2_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/pred_true_curve.png"
 
-    save_path_loss_curve_html_h2_0 = f"all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/loss_curve.html"
-    save_path_pred_true_html_h2_0 = f"all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/pred_true_curve.html"
-    save_path_infidelity_regimes_h2_0 = f"all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/curves/infidelity_regimes.png"
+    save_path_loss_curve_html_h2_0 = f"all_architectures/{timestamp}/h_2_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/loss_curve.html"
+    save_path_pred_true_html_h2_0 = f"all_architectures/{timestamp}/h_2_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/pred_true_curve.html"
+    save_path_infidelity_regimes_h2_0 = f"all_architectures/{timestamp}/h_2_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/curves/infidelity_regimes.png"
 
-    csv_file_path_h2_0 = f'all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/metrics.csv'
+    csv_file_path_h2_0 = f'all_architectures/{timestamp}/h_2_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/metrics.csv'
     
     avg_test_loss_h2_0, amplitudes_h2_0, target_test_h2_0, pred_test_h2_0 = test(test_dataloader_h2_0, model_h2_0, loss_fn)
     avg_train_loss_h2_0, target_train_h2_0, pred_train_h2_0 = train(train_dataloader_h2_0, model_h2_0, loss_fn, optimizer_h2_0)
@@ -952,7 +962,7 @@ if int(trained_regimes[3]):
     total_params_h2_0 = sum(p_h2_0.numel() for p_h2_0 in model_h2_0.parameters())
     train_params_h2_0 = sum(p_h2_0.numel() for p_h2_0 in model_h2_0.parameters() if p_h2_0.requires_grad)
     
-    with open(f'all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/pred_test_h2_0.txt', 'w') as file_h2_0:
+    with open(f'all_architectures/{timestamp}/h_2_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/pred_test_h2_0.txt', 'w') as file_h2_0:
         # Join the list elements into a single string with a newline character
         #print(f"pred_test_h2_0.tolist(): {pred_test_h2_0.tolist()}")
         print(f"len pred_test_h2_0: {len(pred_test_h2_0)}")
@@ -968,12 +978,12 @@ if int(trained_regimes[3]):
         # Write the data to the file
         file_h2_0.write(data_to_write_h2_0)
         
-    with open(f'all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/target_test_h2_0.txt', 'w') as file_h2_0:
+    with open(f'all_architectures/{timestamp}/h_2_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/target_test_h2_0.txt', 'w') as file_h2_0:
         # Join the list elements into a single string with a newline character
         data_to_write_h2_0 = '\n'.join([str(x_h2_0.tolist()) for x_h2_0 in target_test_h2_0])
         # Write the data to the file
         file_h2_0.write(data_to_write_h2_0)
-    with open(f'all_architectures/{timestamp}/h_2_0/{EPOCHS}_epochs/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/evaluation_metrics/input_amplitudes_h2_0.txt', 'w') as file_h2_0:
+    with open(f'all_architectures/{timestamp}/h_2_0/{HIDDEN_LAYERS}_hidden_layers/{activation}/width_{W}/{EPOCHS}_epochs/evaluation_metrics/input_amplitudes_h2_0.txt', 'w') as file_h2_0:
         # Join the list elements into a single string with a newline character
         #print(f"amplitudes_h2_0 data type: {type(amplitudes_h2_0)}")
         str_confs_h2_0 = []
@@ -1093,79 +1103,69 @@ all_values_h0_5 = list(itertools.chain.from_iterable(all_values_h0_5))
 all_values_h1_0 = list(itertools.chain.from_iterable(all_values_h1_0))
 all_values_h2_0 = list(itertools.chain.from_iterable(all_values_h2_0))
 
-min_val_h10e6, max_val_h10e6 = min(all_values_h10e6), max(all_values_h10e6)
-min_val_h0_5, max_val_h0_5 = min(all_values_h0_5), max(all_values_h0_5)
-min_val_h1_0, max_val_h1_0 = min(all_values_h1_0), max(all_values_h1_0)
-min_val_h2_0, max_val_h2_0 = min(all_values_h2_0), max(all_values_h2_0)
+if int(trained_regimes[0]):
+    min_val_h10e6, max_val_h10e6 = min(all_values_h10e6), max(all_values_h10e6)
+    perfect_prediction_x_h10e6 = [min_val_h10e6, max_val_h10e6]
+    ax1_h10e6.plot(perfect_prediction_x_h10e6, perfect_prediction_x_h10e6, '-', label="y=x (perfect prediction)", linewidth=0.7, color='cyan', alpha=0.3)
+    graph_h10e6.add_trace(go.Scatter(x=[min_val_h10e6, max_val_h10e6], y=[min_val_h10e6, max_val_h10e6], mode='lines', name="y=x (perfect prediction)", opacity=0.3, marker=dict(color='cyan')))
+    ax1_h10e6.legend(title="Legend")
+    ax2_h10e6.legend(title="Legend")
+    f1_h10e6.savefig(save_path_pred_true_h10e6, dpi=300, bbox_inches="tight")
+    f2_h10e6.savefig(save_path_loss_curve_h10e6, dpi=300, bbox_inches="tight")
+    #graph.show()
+    graph_h10e6.write_html(save_path_pred_true_html_h10e6)
+    #graph2.show()
+    graph2_h10e6.write_html(save_path_loss_curve_html_h10e6)
+if int(trained_regimes[1]):    
+    min_val_h0_5, max_val_h0_5 = min(all_values_h0_5), max(all_values_h0_5)
+    perfect_prediction_x_h0_5 = [min_val_h0_5, max_val_h0_5]
+    ax1_h0_5.plot(perfect_prediction_x_h0_5, perfect_prediction_x_h0_5, '-', label="y=x (perfect prediction)", linewidth=0.7, color='cyan', alpha=0.3)
+    graph_h0_5.add_trace(go.Scatter(x=[min_val_h0_5, max_val_h0_5], y=[min_val_h0_5, max_val_h0_5], mode='lines', name="y=x (perfect prediction)", opacity=0.3, marker=dict(color='cyan')))
+    ax1_h0_5.legend(title="Legend")
+    ax2_h0_5.legend(title="Legend")
+        
+    f1_h0_5.savefig(save_path_pred_true_h0_5, dpi=300, bbox_inches="tight")
+    f2_h0_5.savefig(save_path_loss_curve_h0_5, dpi=300, bbox_inches="tight")
+    #graph.show()
+    graph_h0_5.write_html(save_path_pred_true_html_h0_5)
+    #graph2.show()
+    graph2_h0_5.write_html(save_path_loss_curve_html_h0_5)
+if int(trained_regimes[2]):
+    min_val_h1_0, max_val_h1_0 = min(all_values_h1_0), max(all_values_h1_0)
+    perfect_prediction_x_h1_0 = [min_val_h1_0, max_val_h1_0]
+    ax1_h1_0.plot(perfect_prediction_x_h1_0, perfect_prediction_x_h1_0, '-', label="y=x (perfect prediction)", linewidth=0.7, color='cyan', alpha=0.3)
+    graph_h1_0.add_trace(go.Scatter(x=[min_val_h1_0, max_val_h1_0], y=[min_val_h1_0, max_val_h1_0], mode='lines', name="y=x (perfect prediction)", opacity=0.3, marker=dict(color='cyan')))
+    ax1_h1_0.legend(title="Legend")
+    ax2_h1_0.legend(title="Legend")
+        
+    f1_h1_0.savefig(save_path_pred_true_h1_0, dpi=300, bbox_inches="tight")
+    f2_h1_0.savefig(save_path_loss_curve_h1_0, dpi=300, bbox_inches="tight")
+    #graph.show()
+    graph_h1_0.write_html(save_path_pred_true_html_h1_0)
+    #graph2.show()
+    graph2_h1_0.write_html(save_path_loss_curve_html_h1_0)
+if int(trained_regimes[3]):
+    min_val_h2_0, max_val_h2_0 = min(all_values_h2_0), max(all_values_h2_0)
+    perfect_prediction_x_h2_0 = [min_val_h2_0, max_val_h2_0]
+    ax1_h2_0.plot(perfect_prediction_x_h2_0, perfect_prediction_x_h2_0, '-', label="y=x (perfect prediction)", linewidth=0.7, color='cyan', alpha=0.3)
+    graph_h2_0.add_trace(go.Scatter(x=[min_val_h2_0, max_val_h2_0], y=[min_val_h2_0, max_val_h2_0], mode='lines', name="y=x (perfect prediction)", opacity=0.3, marker=dict(color='cyan')))
+    ax1_h2_0.legend(title="Legend")
+    ax2_h2_0.legend(title="Legend")
+        
+    f1_h2_0.savefig(save_path_pred_true_h2_0, dpi=300, bbox_inches="tight")
+    f2_h2_0.savefig(save_path_loss_curve_h2_0, dpi=300, bbox_inches="tight")
+    #graph.show()
+    graph_h2_0.write_html(save_path_pred_true_html_h2_0)
+    #graph2.show()
+    graph2_h2_0.write_html(save_path_loss_curve_html_h2_0)
 
 
-
-perfect_prediction_x_h10e6 = [min_val_h10e6, max_val_h10e6]
-perfect_prediction_x_h0_5 = [min_val_h0_5, max_val_h0_5]
-perfect_prediction_x_h1_0 = [min_val_h1_0, max_val_h1_0]
-perfect_prediction_x_h2_0 = [min_val_h2_0, max_val_h2_0]
 
 
 #print(f"Perferct prediction x: {perfect_prediction_x}")
-ax1_h10e6.plot(perfect_prediction_x_h10e6, perfect_prediction_x_h10e6, '-', label="y=x (perfect prediction)", linewidth=0.7, color='cyan', alpha=0.3)
-ax1_h0_5.plot(perfect_prediction_x_h0_5, perfect_prediction_x_h0_5, '-', label="y=x (perfect prediction)", linewidth=0.7, color='cyan', alpha=0.3)
-ax1_h1_0.plot(perfect_prediction_x_h1_0, perfect_prediction_x_h1_0, '-', label="y=x (perfect prediction)", linewidth=0.7, color='cyan', alpha=0.3)
-ax1_h2_0.plot(perfect_prediction_x_h2_0, perfect_prediction_x_h2_0, '-', label="y=x (perfect prediction)", linewidth=0.7, color='cyan', alpha=0.3)
-
-graph_h10e6.add_trace(go.Scatter(x=[min_val_h10e6, max_val_h10e6], y=[min_val_h10e6, max_val_h10e6], mode='lines', name="y=x (perfect prediction)", opacity=0.3, marker=dict(color='cyan')))
-graph_h0_5.add_trace(go.Scatter(x=[min_val_h0_5, max_val_h0_5], y=[min_val_h0_5, max_val_h0_5], mode='lines', name="y=x (perfect prediction)", opacity=0.3, marker=dict(color='cyan')))
-graph_h1_0.add_trace(go.Scatter(x=[min_val_h1_0, max_val_h1_0], y=[min_val_h1_0, max_val_h1_0], mode='lines', name="y=x (perfect prediction)", opacity=0.3, marker=dict(color='cyan')))
-graph_h2_0.add_trace(go.Scatter(x=[min_val_h2_0, max_val_h2_0], y=[min_val_h2_0, max_val_h2_0], mode='lines', name="y=x (perfect prediction)", opacity=0.3, marker=dict(color='cyan')))
-    
-ax1_h10e6.legend(title="Legend")
-ax2_h10e6.legend(title="Legend")
-    
-f1_h10e6.savefig(save_path_pred_true_h10e6, dpi=300, bbox_inches="tight")
-f2_h10e6.savefig(save_path_loss_curve_h10e6, dpi=300, bbox_inches="tight")
-
-ax1_h0_5.legend(title="Legend")
-ax2_h0_5.legend(title="Legend")
-    
-f1_h0_5.savefig(save_path_pred_true_h0_5, dpi=300, bbox_inches="tight")
-f2_h0_5.savefig(save_path_loss_curve_h0_5, dpi=300, bbox_inches="tight")
-
-ax1_h1_0.legend(title="Legend")
-ax2_h1_0.legend(title="Legend")
-    
-f1_h1_0.savefig(save_path_pred_true_h1_0, dpi=300, bbox_inches="tight")
-f2_h1_0.savefig(save_path_loss_curve_h1_0, dpi=300, bbox_inches="tight")
-
-ax1_h2_0.legend(title="Legend")
-ax2_h2_0.legend(title="Legend")
-    
-f1_h2_0.savefig(save_path_pred_true_h2_0, dpi=300, bbox_inches="tight")
-f2_h2_0.savefig(save_path_loss_curve_h2_0, dpi=300, bbox_inches="tight")
 
 #plt.show(block=False)
 
-
-
-
-
-#graph.show()
-graph_h10e6.write_html(save_path_pred_true_html_h10e6)
-#graph2.show()
-graph2_h10e6.write_html(save_path_loss_curve_html_h10e6)
-
-#graph.show()
-graph_h0_5.write_html(save_path_pred_true_html_h0_5)
-#graph2.show()
-graph2_h0_5.write_html(save_path_loss_curve_html_h0_5)
-
-#graph.show()
-graph_h1_0.write_html(save_path_pred_true_html_h1_0)
-#graph2.show()
-graph2_h1_0.write_html(save_path_loss_curve_html_h1_0)
-
-#graph.show()
-graph_h2_0.write_html(save_path_pred_true_html_h2_0)
-#graph2.show()
-graph2_h2_0.write_html(save_path_loss_curve_html_h2_0)
 
 '''infidelities_graph(
     EPOCHS, 
