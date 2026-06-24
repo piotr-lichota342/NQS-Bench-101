@@ -4,9 +4,9 @@ from datetime import datetime
 
 N_spins = 12
 BATCH_SIZE = 40
-W = int(os.environ.get("W", 16))
+
 EPOCHS = int(os.environ.get("EPOCHS", 3))
-HIDDEN_LAYERS = int(os.environ.get("HIDDEN_LAYERS", 2))
+
 INPUT_SIZE = (32,12)
 ACT_FUNCTION = int(os.environ.get("ACT_FUNCTION", 0))
 DECIMAL_PLACES_METRICS = 4
@@ -17,8 +17,16 @@ VALID_PROPORTION = 0.1
 DATASET_SIZE = 4096
 TIMESTAMP = str(os.environ.get("TIMESTAMP", None))
 EXPONENTIAL_LR = True
+CUSTOM_ARCH = True
+WIDTH_SEQUENCE = str(os.environ.get("WIDTH_SEQUENCE", None))
 
 trained_regimes = os.environ.get("trained_regimes", None)
+if CUSTOM_ARCH:
+    W = os.environ.get("W", 16)
+    HIDDEN_LAYERS = "custom"
+else:
+    W = int(os.environ.get("W", 16))
+    HIDDEN_LAYERS = int(os.environ.get("HIDDEN_LAYERS", 2))
 
 device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
 print(device)
