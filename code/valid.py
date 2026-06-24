@@ -32,5 +32,5 @@ def valid(dataloader, model, loss_fn):
     avg_loss = test_loss / num_batches
     #correct /= size
     #print(f"Valid loss: {avg_loss:>8f} \n")
-    target_points, pred_points = torch.cat(target_points).flatten().numpy(), torch.cat(pred_points).flatten().numpy()
+    target_points, pred_points = torch.cat(target_points).flatten().cpu().numpy(), torch.cat(pred_points).flatten().cpu().numpy()
     return avg_loss, target_points, pred_points
