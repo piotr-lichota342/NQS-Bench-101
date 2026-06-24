@@ -27,7 +27,7 @@ from train import train
 from valid import valid
 
 from test import test
-from config import EPOCHS, device, trained_regimes, DATASET_SIZE, TEST_PROPORTION, EXPONENTIAL_LR, W
+from config import EPOCHS, device, trained_regimes, DATASET_SIZE, TEST_PROPORTION, EXPONENTIAL_LR, W, CUSTOM_ARCH, WIDTH_SEQUENCE
 
 from torch.optim.lr_scheduler import ExponentialLR, LinearLR, SequentialLR
 #from distancia import Hellinger
@@ -77,13 +77,15 @@ def get_optimizer_and_scheduler(model, width=W, threshold=432):
     width: hidden layer width (used to decide schedule type)
     threshold: width cutoff from the paper (432 for N=12)
     """
+    if CUSTOM_ARCH:
+        width = max([int(x) for x in WIDTH_SEQUENCE.split(',')])
     LR_PEAK = 1e-3 # peak / initial learning rate
     LR_INIT = 1e-6 # warmup starting lr (large networks only)
     DECAY_RATE = 0.99 # multiply lr by this every transition_steps
    
     TRANS_STEPS = 50 # how often decay is applied (in optimizer
   
-    WARMUP_STEPS = 200 # warmup duration (large networks only)
+    WARMUP_STEPS = 150 # warmup duration (large networks only)
     optimizer = torch.optim.Adam(model.parameters(), lr=LR_PEAK)
     if width < threshold:
         # --- small network: plain exponential decay ---
@@ -182,16 +184,16 @@ print(model_h0_5)
 
 loss_fn = nn.MSELoss() # nn.MSELoss
 
-optimizer_h0_5, scheduler_h0_5 = get_optimizer_and_scheduler(model_h0_5)
-optimizer_h1_0, scheduler_h1_0 = get_optimizer_and_scheduler(model_h1_0)
-optimizer_h2_0, scheduler_h2_0 = get_optimizer_and_scheduler(model_h2_0)
-optimizer_h1_0e6, scheduler_h1_0e6 = get_optimizer_and_scheduler(model_h1_0e6)
-
-
-'''optimizer_h0_5 = torch.optim.Adam(model_h0_5.parameters(), lr=1e-3, weight_decay=1e-4) 
-optimizer_h1_0 = torch.optim.Adam(model_h1_0.parameters(), lr=1e-3) 
-optimizer_h2_0 = torch.optim.AdamW(model_h2_0.parameters(), lr=3.5e-5, weight_decay=1e-1) 
-optimizer_h1_0e6 = torch.optim.AdamW(model_h1_0e6.parameters(), lr=1e-3) '''
+if EXPONENTIAL_LR:
+    optimizer_h0_5, scheduler_h0_5 = get_optimizer_and_scheduler(model_h0_5)
+    optimizer_h1_0, scheduler_h1_0 = get_optimizer_and_scheduler(model_h1_0)
+    optimizer_h2_0, scheduler_h2_0 = get_optimizer_and_scheduler(model_h2_0)
+    optimizer_h1_0e6, scheduler_h1_0e6 = get_optimizer_and_scheduler(model_h1_0e6)
+else:
+    optimizer_h0_5 = torch.optim.Adam(model_h0_5.parameters(), lr=1e-3, weight_decay=1e-4) 
+    optimizer_h1_0 = torch.optim.Adam(model_h1_0.parameters(), lr=1e-3) 
+    optimizer_h2_0 = torch.optim.AdamW(model_h2_0.parameters(), lr=3.5e-5, weight_decay=1e-1) 
+    optimizer_h1_0e6 = torch.optim.AdamW(model_h1_0e6.parameters(), lr=1e-3) 
 
 #print(optimizer_h0_5.get_config())
 
