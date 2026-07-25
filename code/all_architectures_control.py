@@ -10,12 +10,12 @@ from time import time
 from config import CUSTOM_ARCH, WIDTH_SEQUENCE
 from itertools import permutations, product
 
-epoch_range = [500,1000]
+epoch_range = [30,60]
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-widths_range = [4, 8, 16, 32, 64, 128, 256, 512, 2048, 4096, 8192]
+widths_range = [16, 32, 64, 128, 256, 512, 2048, 4096]
 
-width_set = [4, 8, 16, 32, 64, 128, 256, 512, 2048, 4096, 8192]
+width_set = [16, 32, 64, 128, 256, 512, 2048, 4096]
 #width_set = [8,16,32,64,128,256,512,2048]
 
 result = []

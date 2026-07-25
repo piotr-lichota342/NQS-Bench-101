@@ -1,78 +1,122 @@
 from matplotlib.colors import LogNorm
-import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
+from pathlib import Path
 
-"""
-Planned plots (separately for each regime):
-- Training time vs number of parameters (NAS-Bench-101) ✔,
-- Performance vs network width ✔
-- Performance vs number of hidden layers ✔
-- Performance vs activation function ✔
-- Performance vs trained regimes ✔
-- Performance vs network depth (NAS-Bench-101) ✔ (HL+2)
-- Performance for custom architectures (width sequences)
-- Descriptive statistics for each regime ✔
-- Performance: fixed widths vs custom architectures
-- Statistics of datasets (configurations and amplitudes) ✔
-- Over and underparameterized regions
-- Training time vs performance (NAS-Bench-101)
-- Aggregated impact (NAS-Bench-101)
-- Locality vs depth
-- Locality vs width
+'''root_folder = Path("all_architectures/20260613_193047")
 
-"""
+# Find all CSV files recursively
+csv_files = list(root_folder.rglob("*.csv"))
 
-csv_file_path = 'dataset_statistics/dataset_statistics.csv'
-all_achitectures_csv_path = 'all_architectures_metrics/all_architectures_metrics.csv'
+# Read and concatenate all CSVs
+combined_df = pd.concat(
+    (pd.read_csv(file) for file in csv_files),
+    ignore_index=True
+)'''
 
-df_all_architectures = pd.read_csv(all_achitectures_csv_path)
-df_all_architectures = df_all_architectures.dropna(subset=['train_time (s)', 'hellinger_dist_test', 'train_params'])
+# Existing dataframe
+# existing_df = pd.read_csv("existing.csv")
 
-train_time = df_all_architectures['train_time (s)'].dropna().values
-infid = df_all_architectures['infidelity'].dropna().values
-hell_test = df_all_architectures['hellinger_dist_test'].dropna().values
-test_loss = df_all_architectures['test_loss'].dropna().values
-r2_test = df_all_architectures['R2_test'].dropna().values
-mse_test = df_all_architectures['MSE_test'].dropna().values
-mae_test = df_all_architectures['MAE_test'].dropna().values
-params = df_all_architectures['train_params'].dropna().values
-epochs = df_all_architectures['epochs'].dropna().values
-loss_function = df_all_architectures['loss_fn'].dropna().values
-regimes = df_all_architectures['regime'].dropna().values
+df = pd.read_csv('all_architectures_metrics/all_architectures_metrics.csv')
+df = df.dropna(subset=['train_time (s)', 'valid_loss',
+                       'train_params', 'epochs'])
 
-activations = df_all_architectures['activation_fn'].dropna().values
-optimizers = df_all_architectures['optimizer_name'].dropna().values
-hell_test = df_all_architectures['hellinger_dist_test'].dropna().values
-test_loss = df_all_architectures['test_loss'].dropna().values
+# Append the combined CSV data to the existing dataframe
+#df = pd.concat([df, combined_df], ignore_index=True)
+df = df[df['date'] == '20260613_193047'] 
 
-# Simulated training time
-training_time = train_time
+#df = df[df['regime'] == 'h=0.5'] 
 
-# Simulated validation accuracy
-accuracy = hell_test
 
-# Plot
+print(df.shape)
+print(df[['date', 'regime']].head())
+print(df['epochs'].value_counts())
+
+params = df['train_params'].values
+training_time = df['train_time (s)'].values
+accuracy = df['valid_loss'].values
+epochs = df['epochs'].astype(int).values
+
 fig, ax = plt.subplots(figsize=(6, 5))
 
-sc = ax.scatter(
-    params,
-    training_time,
-    c=accuracy,
-    cmap="viridis",
-    s=8,
-    alpha=0.5,
-    norm=LogNorm(),
-    linewidths=1,
+hilbert_space_size = 4096
+ax.axvline(
+    x=hilbert_space_size,
+    color='gray',
+    linestyle='--',
+    linewidth=1.5
 )
+
+best_confs = int(4096*0.75)
+ax.axvline(
+    x=best_confs,
+    color='blue',
+    linestyle='--',
+    linewidth=1.5
+)
+
+# Marker cycle (add more if needed)
+markers = ['o', 's', '^', 'v', 'D', 'P', 'X', '*', '<', '>', 'h', '8']
+
+# Get the 5 largest unique epoch values
+top_epochs = (
+    df['epochs']
+    .dropna()
+    .value_counts()
+    .head(2)
+    .index
+    .tolist()
+)
+
+# Sort ascending for nicer legend ordering
+top_epochs = sorted(top_epochs)
+
+print("Top epochs:", top_epochs)
+
+epoch_counts = (
+    df[df['epochs'].isin(top_epochs)]
+    .groupby('epochs')
+    .size()
+)
+
+print(epoch_counts)
+
+unique_epochs = top_epochs
+
+for i, epoch in enumerate(unique_epochs):
+    mask = epochs == epoch
+
+    sc = ax.scatter(
+        params[mask],
+        training_time[mask],
+        c=accuracy[mask],
+        cmap='viridis',
+        marker=markers[i % len(markers)],
+        s=30,
+        alpha=0.5,
+        linewidths=0.5,
+        edgecolors='black',
+        label=f'{epoch} epochs'
+    )
+
+
 
 ax.set_xscale("log")
 ax.set_yscale("log")
-ax.set_xlabel("# of trainable parameters (log-scale)")
-ax.set_ylabel("training time (seconds) (log-scale)")
+
+ax.set_xlabel("# of trainable parameters")
+ax.set_ylabel("training time (seconds) ")
 
 cbar = plt.colorbar(sc)
-cbar.set_label("Hellinger Distance (test set) (log-scale)")
+cbar.set_label("Validation Loss")
 
-plt.savefig("dataset_statistics/training_time_vs_params.png")
+ax.legend(
+    title="Training epochs (h=0.5)",
+    loc="best",
+    frameon=True
+)
+
+plt.tight_layout()
+plt.savefig("dataset_statistics/training_time_vs_params.png", dpi=300)
 plt.close()

@@ -99,7 +99,7 @@ except EmptyDataError:
     global_metrics_dataframe = pd.DataFrame()
 
 
-epoch_range = [500,1000]
+epoch_range = [30,60]
 print(f"Number of epochs: {EPOCHS}")
 timestamp = TIMESTAMP
 print(f"The Timestamp inside generating_all_architectures: is: {timestamp}")

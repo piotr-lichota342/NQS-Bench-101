@@ -8,6 +8,8 @@ csv_file_path = 'dataset_statistics/dataset_statistics.csv'
 all_achitectures_csv_path = 'all_architectures_metrics/all_architectures_metrics.csv'
 
 df_all_architectures = pd.read_csv(all_achitectures_csv_path)
+#df_all_architectures = df_all_architectures[df_all_architectures['date'] == '20260613_193047']
+df_all_architectures = df_all_architectures[df_all_architectures['regime'] == 'h=2.0']
 DECIMALS = 4
 
 stats_data = {
@@ -259,7 +261,7 @@ plt.close()
 
 plt.figure(figsize=(10, 6))
 plt.violinplot(hell_test)
-plt.title("(NQS-Bench-101): Hellinger distance (test) of all architectures—violin plots")
+plt.title("(NQS-Bench-101): Hellinger distance (test) of \nall architectures—violin plots (h=2.0)")
 plt.savefig("dataset_statistics/hellinger_test_violinplot.png")
 plt.close()
 

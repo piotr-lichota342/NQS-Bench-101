@@ -7,7 +7,7 @@ csv_file_path = 'dataset_statistics/dataset_statistics.csv'
 all_achitectures_csv_path = 'all_architectures_metrics/all_architectures_metrics.csv'
 
 df_all_architectures = pd.read_csv(all_achitectures_csv_path)
-df_all_architectures = df_all_architectures.dropna(subset=['network_width', 'R2_test'])
+df_all_architectures = df_all_architectures.dropna(subset=['activation_fn', 'R2_test'])
 
 from pathlib import Path
 
@@ -38,6 +38,7 @@ df = df_all_architectures
 
 #
 #df = df[df['date'] == '20260613_193047'] 
+
 df = df[df['regime'] == 'h=2.0'] 
 
 best_row = df.loc[df["R2_test"].idxmax()]
@@ -45,30 +46,34 @@ best_row = df.loc[df["R2_test"].idxmax()]
 print("The best row is: ",best_row)
 
 
-df = df[df['activation_fn'] == 'gelu'] 
-print("After filtering for gelu, the shape of the dataframe is: ", df.shape)
+#df = df[df['activation_fn'] == 'gelu'] 
+#print("After filtering for gelu, the shape of the dataframe is: ", df.shape)
 df = df[df['epochs'] == 60] 
 print("After filtering for 60 epochs, the shape of the dataframe is: ", df.shape)
 df = df[df['hidden_layers'] == 'custom'] 
 print("After filtering for 2 hidden layers, the shape of the dataframe is: ", df.shape)
 
-result = []
+#df = df[df['regime'] == 'h=0.5'] 
+print("After filtering for the regime the dataframe is: ", df.shape)
 
-from itertools import permutations, product
-hidden_layers_range = range(2,3)
-act_functions_range = range(0,3)
-width_set = ['16_16', '32_32', '64_64', '128_128', '256_256', '512_512', '2048_2048', '4096_4096']
+width_set2 = ['16_16', '32_32', '64_64', '128_128', '256_256', '512_512', '2048_2048', '4096_4096']
 
 
-widths = width_set
+widths2 = width_set2
 
 df = df[df['network_width'].isin(
-    widths
+    widths2
 )]
 
+df = df[df['activation_fn'].isin(
+    ['gelu', 'relu', 'tanh']
+)]
+
+# Average R² for each network width
+widths = ['gelu', 'relu', 'tanh']
 
 r2_by_act = (
-    df.groupby('network_width')['R2_test']
+    df.groupby('activation_fn')['R2_test']
       .mean()
       .reindex(widths)
 )
@@ -100,7 +105,7 @@ arch_cols = [
     'activation_fn'
 ]
 
-required = {'16', '32', '64', '128', '256', '512', '2048', '4096'}
+required = {'16', '32', '64', '128', '256', '512', '2048', '4096', '8192'}
 
 grouped = df_filtered.groupby(arch_cols)
 
@@ -121,6 +126,12 @@ print(sorted(df_arch["network_width"].unique()))
 print(df_arch["network_width"].value_counts().sort_index())
 '''
 
+# Compute mean R2_test per activation (for ONE architecture)
+r2_by_act = (
+    df.groupby('activation_fn')['R2_test']
+    .mean()
+    .reindex(widths)
+)
 
 # Build pairwise difference matrix (or replace with absolute values if you prefer)
 n = len(widths)
@@ -140,12 +151,12 @@ im = ax.imshow(data, cmap='plasma')
 # Tick labels
 ax.set_xticks(np.arange(len(cols)))
 ax.set_yticks(np.arange(len(rows)))
-ax.set_xticklabels(cols, rotation=90)
+ax.set_xticklabels(cols)
 ax.set_yticklabels(rows)
 
 # Put x labels on top
 ax.tick_params(top=True, bottom=False,
-               labeltop=True, labelbottom=False, labelsize=14)
+               labeltop=True, labelbottom=False, labelsize=23)
 
 # Annotate cells
 for i in range(data.shape[0]):
@@ -155,7 +166,7 @@ for i in range(data.shape[0]):
             f"{data[i, j]:+.2f}%",
             ha="center", va="center",
             color="white",
-            fontsize=13,
+            fontsize=36,
             path_effects=[
                 pe.withStroke(linewidth=2, foreground="black")
             ]
@@ -163,8 +174,8 @@ for i in range(data.shape[0]):
 
 # Axis labels
 
-ax.set_ylabel("network_width (baseline)", fontsize=14)
-ax.set_xlabel("network width (target)", fontsize=14)
+ax.set_ylabel("activation_function (baseline)", fontsize=23)
+ax.set_xlabel("activation_function (target)", fontsize=23)
 
 
 
@@ -176,9 +187,8 @@ for spine in ax.spines.values():
 # plt.colorbar(im)
 
 fig.text(0.5, 0.03,
-         "R² (test set) for 2 hidden layers" +  "\nh=2.0, 60 epochs, gelu, same width in each hidden layer",
-         ha="center",
-         fontsize=14)
+         "R² (test set) for 2 hidden layers" +  "\nh=2.0, 60 epochs" + "\nsame width in each hidden layer",
+         ha="center", fontsize=23)
 
 plt.tight_layout(rect=[0, 0.05, 1, 1])
 plt.show()

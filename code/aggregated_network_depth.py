@@ -7,7 +7,7 @@ csv_file_path = 'dataset_statistics/dataset_statistics.csv'
 all_achitectures_csv_path = 'all_architectures_metrics/all_architectures_metrics.csv'
 
 df_all_architectures = pd.read_csv(all_achitectures_csv_path)
-df_all_architectures = df_all_architectures.dropna(subset=['network_width', 'R2_test'])
+df_all_architectures = df_all_architectures.dropna(subset=['hidden_layers', 'R2_test'])
 
 from pathlib import Path
 
@@ -32,13 +32,15 @@ df = df.dropna(subset=['train_time (s)', 'valid_loss',
                        'train_params', 'epochs'])'''
 
 df = df_all_architectures
+df = df.copy()
+
+
 
 # Append the combined CSV data to the existing dataframe
 #df = pd.concat([df, combined_df], ignore_index=True)
 
 #
 #df = df[df['date'] == '20260613_193047'] 
-df = df[df['regime'] == 'h=2.0'] 
 
 best_row = df.loc[df["R2_test"].idxmax()]
 
@@ -49,26 +51,27 @@ df = df[df['activation_fn'] == 'gelu']
 print("After filtering for gelu, the shape of the dataframe is: ", df.shape)
 df = df[df['epochs'] == 60] 
 print("After filtering for 60 epochs, the shape of the dataframe is: ", df.shape)
-df = df[df['hidden_layers'] == 'custom'] 
-print("After filtering for 2 hidden layers, the shape of the dataframe is: ", df.shape)
+'''df = df[df['hidden_layers'] == '2'] 
+print("After filtering for 2 hidden layers, the shape of the dataframe is: ", df.shape)'''
 
-result = []
+df = df[df['regime'] == 'h=0.5'] 
+print("After filtering for the regime the dataframe is: ", df.shape)
 
-from itertools import permutations, product
-hidden_layers_range = range(2,3)
-act_functions_range = range(0,3)
-width_set = ['16_16', '32_32', '64_64', '128_128', '256_256', '512_512', '2048_2048', '4096_4096']
-
-
-widths = width_set
-
-df = df[df['network_width'].isin(
-    widths
+df = df[df['hidden_layers'].isin(
+    ['custom']
 )]
 
+# Average R² for each network width
+widths = ['1', '2', '3']
+
+df["n_hidden_layers"] = (
+    df["network_width"]
+          .astype(str)
+          .str.count("_") + 1
+)
 
 r2_by_act = (
-    df.groupby('network_width')['R2_test']
+    df.groupby('n_hidden_layers')['R2_test']
       .mean()
       .reindex(widths)
 )
@@ -97,10 +100,10 @@ print(df['hidden_layers'].dtype)
 # Find rows with same A, B, C values
 arch_cols = [
     'regime',
-    'activation_fn'
+    'hidden_layers'
 ]
 
-required = {'16', '32', '64', '128', '256', '512', '2048', '4096'}
+required = {'16', '32', '64', '128', '256', '512', '2048', '4096', '8192'}
 
 grouped = df_filtered.groupby(arch_cols)
 
@@ -122,15 +125,25 @@ print(df_arch["network_width"].value_counts().sort_index())
 '''
 
 
+layers = [1, 2, 3]
+# Compute mean R2_test per activation (for ONE architecture)
+r2_by_act = (
+    df.groupby('n_hidden_layers')['R2_test']
+    .mean()
+    .reindex(layers)
+)
+
 # Build pairwise difference matrix (or replace with absolute values if you prefer)
 n = len(widths)
 data = np.zeros((n, n))
 
-for i, a in enumerate(widths):
-    for j, b in enumerate(widths):
+n = len(layers)
+
+for i, a in enumerate(layers):
+    for j, b in enumerate(layers):
         data[i, j] = 100 * (r2_by_act[b] - r2_by_act[a])
 
-rows = cols = widths
+rows = cols = layers
 
 fig, ax = plt.subplots(figsize=(11, 11))
 
@@ -140,12 +153,12 @@ im = ax.imshow(data, cmap='plasma')
 # Tick labels
 ax.set_xticks(np.arange(len(cols)))
 ax.set_yticks(np.arange(len(rows)))
-ax.set_xticklabels(cols, rotation=90)
+ax.set_xticklabels(cols)
 ax.set_yticklabels(rows)
 
 # Put x labels on top
 ax.tick_params(top=True, bottom=False,
-               labeltop=True, labelbottom=False, labelsize=14)
+               labeltop=True, labelbottom=False, labelsize=23)
 
 # Annotate cells
 for i in range(data.shape[0]):
@@ -155,7 +168,7 @@ for i in range(data.shape[0]):
             f"{data[i, j]:+.2f}%",
             ha="center", va="center",
             color="white",
-            fontsize=13,
+            fontsize=36,
             path_effects=[
                 pe.withStroke(linewidth=2, foreground="black")
             ]
@@ -163,8 +176,8 @@ for i in range(data.shape[0]):
 
 # Axis labels
 
-ax.set_ylabel("network_width (baseline)", fontsize=14)
-ax.set_xlabel("network width (target)", fontsize=14)
+ax.set_ylabel("number of hidden layers (baseline)", fontsize=23)
+ax.set_xlabel("number of hidden layers (target)", fontsize=23)
 
 
 
@@ -176,9 +189,8 @@ for spine in ax.spines.values():
 # plt.colorbar(im)
 
 fig.text(0.5, 0.03,
-         "R² (test set) for 2 hidden layers" +  "\nh=2.0, 60 epochs, gelu, same width in each hidden layer",
-         ha="center",
-         fontsize=14)
+         "R² (test set) " +  "\nh=0.5, gelu, 60 epochs",
+         ha="center", fontsize=23)
 
 plt.tight_layout(rect=[0, 0.05, 1, 1])
 plt.show()
